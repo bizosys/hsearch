@@ -1,0 +1,1062 @@
+<!--  
+/*
+* Copyright 2013 Bizosys Technologies Limited
+*
+* Licensed to the Bizosys Technologies Limited (Bizosys) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The Bizosys licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+ -->
+
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>HSearch - New Project</title>
+	
+  <link rel="shortcut icon" href="images/favicon.gif">
+  <link rel="stylesheet" href="css/slick.grid.css" type="text/css"/>
+  <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
+  <link rel="stylesheet" href="controls/slick.columnpicker.css" type="text/css"/>
+  <link rel="stylesheet" href="css/hsearch.css" type="text/css"/>
+  <link rel="stylesheet" href="css/modal.css" type="text/css"/>
+  <link rel="stylesheet" href="css/slick-default-theme.css" type="text/css"/>
+  
+  <style>
+    .slick-cell-checkboxsel {
+      background: #f0f0f0;
+      border-right-color: silver;
+      border-right-style: solid;
+    }
+
+  .setButtons {
+        height:24px;
+        width: 42px;
+        padding:2px;
+        font-size:10px;
+        background-color:#b6dde4;
+    }
+
+	
+    .cell-title {
+      font-weight: bold;
+    }
+
+    .cell-effort-driven {
+      text-align: center;
+    }
+  </style>
+  
+<script src="js/lib/firebugx.js"></script>
+
+<script src="js/lib/jquery-1.7.min.js"></script>
+<script src="js/lib/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="js/lib/jquery.simplemodal.js"></script>
+<script src="js/lib/modal.js"></script>
+<script src="js/lib/jquery.event.drag-2.2.js"></script>
+
+<script src="js/slick.core.js"></script>
+<script src="js/plugins/slick.checkboxselectcolumn.js"></script>
+<script src="js/plugins/slick.autotooltips.js"></script>
+<script src="js/plugins/slick.cellrangedecorator.js"></script>
+<script src="js/plugins/slick.cellrangeselector.js"></script>
+<script src="js/plugins/slick.cellcopymanager.js"></script>
+<script src="js/plugins/slick.cellselectionmodel.js"></script>
+<script src="js/plugins/slick.rowselectionmodel.js"></script>
+<script src="controls/slick.columnpicker.js"></script>
+<script src="js/slick.formatters.js"></script>
+<script src="js/slick.editors.js"></script>
+<script src="js/slick.grid.js"></script>
+
+<script type="text/javascript">
+
+	var projectsGrid;
+	var sampleDataGrid;
+	var propertyGrid;
+
+	var hdfsFilePath = "";
+	var projectName = "";
+	var projects ;
+	
+	var records;
+	var firstRow;
+	var headerNames;
+	var curPropertyName;
+	var columnsProperties;
+	var properties = ["Field type", "Index", "Store", "Is Repeatable", "Is PartitionKey", "Partition Position", "Cache", "Compress", "Analyze", "Analyzer", "Skip Null", "Default Value"];
+	var defaultColProperties = ["String", "true", "true", "true", "false", "", "false", "false", "false", "", "true", "-1"];
+	var selectedColProperty;
+	var selectedSeparatorIndex;
+
+	$(function () {
+		defaultLoad();
+	});
+	
+	function defaultLoad()
+	{
+		loadProjects();
+		//createProject();
+	}
+	
+	function loadProjects() {
+
+		var xmlData = {
+			service: "service",
+			action: "projects",
+			project: "dummy"
+		};
+
+		var projects = [];
+		$.ajax({
+			type: "POST",
+			async: false,
+			url: "process.xml",
+			data: xmlData,
+			cache:false,
+			dataType: "text",
+			success: function onSuccess(data){	
+				if(null == data)
+				{
+					alert("Unable to get projects");
+					return;
+				}
+				projects = data.split('\n');
+			},
+			error: function onError(data){
+				alert("Error in getting projects data.");
+			}
+		});  
+	}	
+	
+	function loadSampleData() 
+	{
+		projectName = $('#txtProjectName').val();
+		hdfsFilePath = $('#txtHdfsPath').val();
+		
+		if(projectName == "") {
+			alert("Project name is missing. Please enter a valid java class name as project name."); 
+			return;
+		}
+		
+		if( hdfsFilePath == "")
+		{
+			alert("Datasource file path is missing. Please enter a valid HDFS data path. (eg. /stage/dummy.tsv)"); 
+			return;
+		} else {
+			if( hdfsFilePath.indexOf("hdfs://") == 0 )
+			{
+				alert("Mention just the path. Don't prefix  protocol. "); 
+				return;		
+			}
+		}
+
+		if(!isAlphanumeric(projectName))
+		{
+			alert("Project name should be Alpha Numberic.");
+			return;
+		}
+		
+		if(contains(projects,projectName))
+		{
+			alert("Project already exists with this name. Please chose different name");
+			return;
+		}
+		document.getElementById('showDataDiv').style.display = "block";
+		$("input[name=delim][value=" + 1 + "]").attr('checked', 'checked');
+
+		//process.xml?service=service&action=fetch&filepath=' + hdfsFilePath + '&project=' + projectName,
+		var xmlData = {
+			service: "service",
+			action: "fetch",
+			filepath: hdfsFilePath,
+			project: projectName
+		};
+		
+		
+		$.ajax({
+			type: "POST",
+			async: false,
+			url: "process.xml",
+			data: xmlData,
+			cache:false,
+			dataType: "text",
+			success: function onSuccess(data){	
+				if( null == data)
+				{
+					alert("Unable to fetch the sample data.");
+					return;
+				}
+				records = data.split('\n');
+				firstRow = records[0];
+			},
+			error: function onError(data){
+				alert(data);
+			}
+		});  
+
+		selectedSeparatorIndex = parseInt(jQuery( 'input[name=delim]:checked' ).val());
+		document.getElementById("otherdelim").disabled = true;
+		$('#otherdelim').val("");
+		var separator = getSeparator(selectedSeparatorIndex);
+		var cols = firstRow.split(separator);
+		recreateSampleDataGrid(cols, false, separator);
+	}	
+
+	function recreateSampleDataGrid(cols, isFirstRowHeader, separtor)
+	{
+		var columns = [];
+		columnsProperties = [];
+		var colPrefix = "column";
+
+		headerNames = [];
+		for(var colIndex in cols)
+		{
+			var colObj;
+			var colName; 
+			if(!isFirstRowHeader)
+				colName = colPrefix + colIndex ;
+			else
+				colName = cols[colIndex];
+
+			colName = colName.toLowerCase();
+			
+			colName = colName.replace(/\W/g, '');
+			colName = colName.replace(/_/g, '');
+			colName = colName.replace(/|/g, '');
+			
+			if ( colName.trim().length == 0 ) colName = "blank" + colIndex;
+			var firstChar = colName.charAt(0);
+			if ( firstChar == '0' || firstChar == '1' || firstChar == '2' || firstChar == '3' || firstChar == '4' || firstChar == '5' || 
+                firstChar == '6' || firstChar == '7' || firstChar == '8' || firstChar == '9') colName = "d" + colName;
+
+
+			headerNames[colIndex] = colName;
+			colObj = { id: colName , name: colName, field: colName, width: 230}
+			columns[colIndex] = colObj;
+
+			var i = 0;
+			var columnPropertyObj = [];
+			columnPropertyObj['name'] = colName;
+			columnPropertyObj['sourcename'] = cols[colIndex];
+			columnPropertyObj['sourcesequence'] = colIndex;
+			columnPropertyObj['type'] = $("#txtFldType option:selected").text();
+			columnPropertyObj['indexed'] =  $('#txtIndex').attr('checked') ? "true" : "false";
+			columnPropertyObj['stored'] = $('#txtStore').attr('checked') ? "true" : "false";
+			columnPropertyObj['repeatable'] =  $('#txtRepeatable').attr('checked') ? "true" : "false";
+			columnPropertyObj['mergekey'] =  $('#txtPartitionKey').attr('checked') ? "true" : "false";
+			columnPropertyObj['mergeposition'] = $('#txtPartitionKey').attr('checked') ?  $('#txtPartitionPos').val(): "";
+			columnPropertyObj['cache'] =  $('#txtCache').attr('checked') ? "true" : "false";
+			columnPropertyObj['compress'] =  $('#txtCompress').attr('checked') ? "true" : "false";
+			columnPropertyObj['analyzed'] =  $('#txtAnalyze').attr('checked') ? "true" : "false";
+			columnPropertyObj['analyzer'] =  $('#txtAnalyze').attr('checked') ? $('#txtAnalyzer').val() : "";
+			if ($('#txtAnalyze').attr('checked') )
+			{
+				if($('#txtBiWord').attr('checked'))
+				{
+					columnPropertyObj['biword'] = "true";
+				}
+				else
+				{
+					columnPropertyObj['biword'] = "false";
+				}
+			}
+			else
+			{
+				columnPropertyObj['biword'] = "false"
+			}
+			columnPropertyObj['skipNull'] =  $('#txtSkipNull').attr('checked') ? "true" : "false";
+			columnPropertyObj['defaultValue'] =  $('#txtDefaultValue').val();
+			columnsProperties[colName] = columnPropertyObj;
+		}
+		
+		var options = {
+			editable: false,
+			enableCellNavigation: true,
+			asyncEditorLoading: false,
+			autoEdit: false,
+			html:true,
+			forceFitColumns: true 
+		};
+
+		var data = [];
+		var skipFirstRow = isFirstRowHeader;
+		var i = 0;
+		for(var recordI in records)
+		{
+			if(skipFirstRow)
+			{
+				skipFirstRow = false;
+				continue;
+			}
+			var d = (data[i++] = {});
+			var recordCols = records[recordI].split(separtor);
+			for (var colI in recordCols) if (columns[colI]) d[columns[colI].id] = recordCols[colI];
+		}
+		$("#grdSampleData").css("width", (columns.length * 100) + "px");
+		sampleDataGrid = new Slick.Grid("#grdSampleData", data, columns, options);
+
+		sampleDataGrid.onHeaderClick.subscribe(function(e,args){
+			var column = args.column;
+			$("#propertyWindowDiv").modal({
+				minHeight: 550,
+				minWidth: 370,
+				onShow: function (dialog) {
+					dialog.container.css('width', '370px');
+					$('#propertyModalTitle').html("Properties - " + column.name);
+					selectedColProperty = column.name;
+					var selectedColProObj = columnsProperties[column.name];
+					var i = 0;
+					var colProperties = [];
+					colProperties[i++] = selectedColProObj['type'] ;
+					colProperties[i++] = selectedColProObj['indexed'];
+					colProperties[i++] = selectedColProObj['stored'];
+					colProperties[i++] = selectedColProObj['repeatable'];
+					colProperties[i++] = selectedColProObj['mergekey'];
+					colProperties[i++] = selectedColProObj['mergeposition'];
+					colProperties[i++] = selectedColProObj['cache'];
+					colProperties[i++] = selectedColProObj['compress'];
+					colProperties[i++] = selectedColProObj['analyzed'];
+					colProperties[i++] = selectedColProObj['analyzer'];
+					colProperties[i++] = selectedColProObj['biword'];
+					colProperties[i++] = selectedColProObj['skipNull'];
+					colProperties[i++] = selectedColProObj['defaultValue'];
+					loadProperties(colProperties);
+			}});
+
+		});
+	}
+
+	function loadProperties(propertyValues)
+	{
+		var i = 0;
+		$( "#txtFldType").val(propertyValues[i++]);
+		(propertyValues[i++] == "false" ) ? $('#txtIndex').removeAttr('checked') : $('#txtIndex').attr('checked', 'checked');
+		(propertyValues[i++] == "false" ) ? $('#txtStore').removeAttr('checked') : $('#txtStore').attr('checked', 'checked');
+		(propertyValues[i++] == "false" ) ? $('#txtRepeatable').removeAttr('checked') : $('#txtRepeatable').attr('checked', 'checked');
+		(propertyValues[i++] == "false" ) ? $('#txtPartitionKey').removeAttr('checked') : $('#txtPartitionKey').attr('checked', 'checked');
+		$('#txtPartitionPos').val(propertyValues[i++]);
+		if($('#txtPartitionKey').attr('checked'))
+		{
+			$('#txtPartitionPos').removeAttr('disabled');
+		}
+		else
+		{
+			$('#txtPartitionPos').attr('disabled', 'disabled');
+		}
+		(propertyValues[i++] == "false" ) ? $('#txtCache').removeAttr('checked') : $('#txtCache').attr('checked', 'checked');
+		(propertyValues[i++] == "false" ) ? $('#txtCompress').removeAttr('checked') : $('#txtCompress').attr('checked', 'checked');
+		(propertyValues[i++] == "false" ) ? $('#txtAnalyze').removeAttr('checked') : $('#txtAnalyze').attr('checked', 'checked');
+		if($('#txtAnalyze').attr('checked')) 
+		{
+			$('#txtAnalyzer').removeAttr('disabled');
+			$('#txtAnalyzer').val(propertyValues[i++]);
+			$('#txtBiWord').removeAttr('disabled');
+		}
+		else
+		{
+			$('#txtAnalyzer').attr('disabled', 'disabled');
+			$('#txtBiWord').attr('disabled', 'disabled');
+			i++;
+		}
+		(propertyValues[i++] == "false" ) ? $('#txtBiWord').removeAttr('checked') :	$('#txtBiWord').attr('checked', 'checked');
+		(propertyValues[i++] == "false" ) ? $('#txtSkipNull').removeAttr('checked') : $('#txtSkipNull').attr('checked', 'checked');
+		$('#txtDefaultValue').val(propertyValues[i++]);
+	}
+	
+	function saveProperties()
+	{
+		if(selectedColProperty == null  || selectedColProperty === undefined || !selectedColProperty.length)
+		{
+			alert("Unable to save the properties");
+			return;
+		}
+		var columnPropertyObj = columnsProperties[selectedColProperty];
+		columnPropertyObj['type'] = $( "#txtFldType option:selected").text();
+		columnPropertyObj['indexed'] =  $('#txtIndex').attr('checked') ? "true" : "false";
+		columnPropertyObj['stored'] = $('#txtStore').attr('checked') ? "true" : "false";
+		columnPropertyObj['repeatable'] =  $('#txtRepeatable').attr('checked') ? "true" : "false";
+		columnPropertyObj['mergekey'] =  $('#txtPartitionKey').attr('checked') ? "true" : "false";
+		if( $('#txtPartitionKey').attr('checked'))
+		{
+			var partitionKeyPosition = $('#txtPartitionPos').val();
+			if(partitionKeyPosition == "" || !isNumber(partitionKeyPosition))
+			{
+				alert("Please enter the valid partition position.");
+				return;
+			}
+			columnPropertyObj['mergeposition'] = parseInt(partitionKeyPosition);
+		}
+		else
+		{
+			columnPropertyObj['mergeposition'] = "";
+		}
+		
+		columnPropertyObj['cache'] =  $('#txtCache').attr('checked') ? "true" : "false";
+		columnPropertyObj['compress'] =  $('#txtCompress').attr('checked') ? "true" : "false";
+		columnPropertyObj['analyzed'] =  $('#txtAnalyze').attr('checked') ? "true" : "false";
+		columnPropertyObj['analyzer'] =  $('#txtAnalyze').attr('checked') ? $( "#txtAnalyzer option:selected").text() : "";
+		columnPropertyObj['biword'] = $('#txtAnalyze').attr('checked') ?  ($('#txtBiWord').attr('checked') ? "true" : "false") : "false";
+		columnPropertyObj['skipNull'] =  $('#txtSkipNull').attr('checked') ? "true" : "false";
+		columnPropertyObj['defaultValue'] =  $('#txtDefaultValue').val();
+		columnsProperties[selectedColProperty] = columnPropertyObj;
+		$.modal.close();
+	}
+
+	function repaintGrid()
+	{
+		selectedSeparatorIndex = parseInt(jQuery( 'input[name=delim]:checked' ).val());
+		var separator = "";
+		if ( selectedSeparatorIndex == 5)
+		{
+			document.getElementById("otherdelim").disabled = false;
+			separator = $('#otherdelim').val();
+		} else {
+			document.getElementById("otherdelim").disabled = true;
+			separator = getSeparator(selectedSeparatorIndex);
+			$('#otherdelim').val("");
+        }
+		
+		if ( separator.length == 0 ) {
+			return;
+		}
+		var cols = firstRow.split(separator);
+		
+		var isHeader = $('#isfirstheader').attr('checked');
+		recreateSampleDataGrid(cols, isHeader, separator);
+	}
+	
+	function repaintGridCustomDelim()
+	{
+		var customSeperator = $('#otherdelim').val();
+		if(customSeperator == "")
+		{			
+			alert("Please enter custom delimiter value");
+			return;
+		}
+		var cols = firstRow.split(customSeperator);
+		var isHeader = $('#isfirstheader').attr('checked');
+		recreateSampleDataGrid(cols, isHeader, customSeperator);
+	}
+
+	function buildSchemaXml() {
+	    var sep;
+	    if (selectedSeparatorIndex == 1)
+	        sep = '\\t';
+	    else
+	        sep = getSeparator(selectedSeparatorIndex);
+
+
+	    var isAppend = $('#incrementalindex').attr('checked') ? "true" : "false";
+
+	    var schemaXml;
+	    schemaXml = '<schema tableName="' + projectName + '" familyName="1" fieldSeparator="' + sep + '" voClass="' + projectName + '" append="' + isAppend + '">\n';
+	    schemaXml = schemaXml + '<fields>\n';
+	    var isMergeKey = false;
+
+	    var seqNo = columnsI;
+	    for (var columnsI in columnsProperties) {
+	        if (seqNo < parseInt(columnsI)) seqNo = parseInt(columnsI);
+	        schemaXml = schemaXml + ' <field ';
+	        for (var property in columnsProperties[columnsI]) {
+	            schemaXml = schemaXml + ' ' + property + '="' + columnsProperties[columnsI][property] + '"';
+	            if (property == "mergeposition") {
+	                var propVal = columnsProperties[columnsI][property];
+	                if (propVal.length > 0) {
+	                    if (parseInt(propVal) >= 0) {
+	                        isMergeKey = true;
+	                    } else {
+	                        alert("Error: Merge position has to be a positive integer, Found " + propVal);
+	                        return;
+	                    }
+	                }
+	            }
+	        }
+	        schemaXml = schemaXml + ' />' + '\n';
+	    }
+
+	    if (!isMergeKey) {
+	        //alert("Expecting a partion key. Click on column header to set indexing properties.");
+	    }
+
+	    schemaXml = schemaXml + '</fields>\n</schema>';
+	    return schemaXml;
+	}
+	
+	function indexData() {
+	    startJob(buildSchemaXml());
+	}	
+	
+	function indexDataWithSchemaUpload() {
+		
+		$("#uploadWindowDiv").modal({
+				minHeight: 420,
+				minWidth: 370,
+				onShow: function (dialog) {
+				    dialog.container.css('width', '380px');
+				    $("#xmlcontent").val(buildSchemaXml());
+				}
+		});
+			
+	}
+	
+	function startJob(schemaXml) {
+		//process.xml?service=service&action=create&project=' + projectName + '&schema=' + schemaXml
+		var xmlData = {
+			service: "service",
+			action: "create",
+			project: projectName,
+			schema: schemaXml
+		}
+		$.ajax({
+			type: "POST",
+			async: false,
+			url: "process.xml",
+			data: xmlData,
+			cache:false,
+			dataType: "text",
+			success: function onSucess(data) {
+				//'setup.xml?action=compilevo&project=' + projectName + '&schema=' + schemaXml,
+				xmlData = {
+					service: "service",
+					action: "compilevo",
+					project: projectName,
+					schema: schemaXml
+				}
+				$.ajax({
+					type: "POST",
+					async: false,
+					url: "setup.xml",
+					data: xmlData,
+					cache:false,
+					dataType: "text",
+					success: onCompileSuccess,
+					error: onCompileError
+				});
+			},  
+			error: function onError(data){
+				alert("Error in creating project");
+			}
+		});  	
+	}
+	
+	function onCompileSuccess(data)
+	{
+		var isHeader = $('#isfirstheader').attr('checked') ? "true" : "false";
+		//'process.xml?service=service&action=index&project=' + projectName + '&header=' + isHeader + '&filepath=' + hdfsFilePath,
+		var xmlData = {
+			service: "service",
+			action: "index",
+			project: projectName,
+			header: isHeader,
+			filepath: hdfsFilePath
+		};
+		$.ajax({
+			type: "POST",
+			async: false,
+			url: "process.xml",
+			data: xmlData,
+			cache:false,
+			dataType: "text",
+			success: onIndexStarted,
+			error: onIndexError
+		});  
+	}
+
+	function onCompileError(data)
+	{
+		alert("Error in compile VO class.");
+		return;
+	}
+	
+	function onIndexStarted(data)
+	{
+		alert(data);
+		window.location.href = "jobStatus.html?returnUrl=" + data + "&project=" + projectName;
+	}
+	
+	function onIndexError(data)
+	{
+		alert("Error in completing the data indexing");
+		return;
+	}
+	
+	//  ============ General Utils =================
+	
+	function isAlphanumeric(str) {
+		var re = /^[0-9a-zA-Z]+$/;
+		if (str.match(re)) {
+			return true;
+		}
+		return false;
+	}
+
+	function isNumber(str) {
+		var re = /^\d+$/;
+		if (str.match(re)) {
+			return true;
+		}
+		return false;
+	}
+
+
+	function getSeparator(index)
+	{
+		var separator;
+		switch(index)
+		  {
+			case 1: separator = '\t';
+				break
+				
+			case 2: separator = ',';
+			break
+			
+			case 3: separator = ';';
+			break
+			
+			case 4: separator = ' ';
+			break
+			
+			case 5: separator = $('#otherdelim').val();
+		  }
+		return separator;
+	}
+
+	
+	function contains(array, elem, casesensitive)
+	{
+		if(casesensitive){
+			for(var e in array){
+				if(array[e] === elem) return true;
+			}
+		}
+		else{
+			for(var e in array){
+				if(array[e].toLowerCase() == elem.toLowerCase()) return true;
+			}
+		}
+		return false;
+	}
+	
+	// =============== Grid Utils ===================
+	function requiredFieldValidator(value) {
+		if (value == null || value == undefined || !value.length) {
+		  return {valid: false, msg: "This is a required field"};
+		} else {
+		  return {valid: true, msg: null};
+		}
+	}
+	
+	function DynamicSelectCellEditor(args) 
+	{
+	//  args.column.options = "op1,op2";
+		return new Slick.Editors.SelectCellEditor(args);
+		/*
+		// dynamic values
+		// 2: if data needs to be fetched from the server
+		   var editor = new Slick.Editors.SelectCellEditor(args),
+			   $select = editor.getInputEl();
+
+		   $select.html("<option>Loading...</option>");
+		   $.ajax({ }).done(function(list) {
+			   // Update select list
+			   $select.html(newHtml);
+		   });
+
+		   return editor;
+		*/
+	}
+
+	function setFields(setType, propertyName) {
+	    curPropertyName = propertyName;
+	    $("#divFieldSetterHeader").html(setType);
+
+
+	    var setHtml = new Array();
+	    for (var headerIndex in headerNames) {
+	        var checkedId = 'divFieldSetterChk' + headerIndex;
+	        setHtml.push('<input type="checkbox" name="');
+	        setHtml.push(checkedId);
+	        setHtml.push('" id="');
+	        setHtml.push(checkedId);
+	        setHtml.push('" style="width:20px;"');
+
+	        var columnPropertyObj = columnsProperties[headerNames[headerIndex]];
+
+	        if (curPropertyName == "String" || curPropertyName == "int" || curPropertyName == "float" || curPropertyName == "double" || curPropertyName == "boolean" || curPropertyName == "short" || curPropertyName == "byte") {
+	            if (columnPropertyObj["type"] == curPropertyName) setHtml.push(' checked');
+	        } else if (curPropertyName == "stdAnalyzer") {
+	            if (columnPropertyObj["analyzer"] == "org.apache.lucene.analysis.standard.StandardAnalyzer") setHtml.push(' checked');
+	        } else {
+	            if (columnPropertyObj[curPropertyName] == "true") setHtml.push(' checked');
+	        }
+
+	        setHtml.push('>');
+	        setHtml.push(headerNames[headerIndex]);
+
+	        setHtml.push('</input><br />');
+	    }
+	    $("#divFieldSetterChecked").html(setHtml.join(""));
+
+	    $("#divFieldSetter").modal({
+	        minHeight: 420,
+	        minWidth: 370,
+	        onShow: function (dialog) {
+	            dialog.container.css('width', '380px');
+	        }
+	    });
+	}
+
+	function applyFieldSettings() {
+	    for (var headerIndex in headerNames) {
+	        var checkedId = '#divFieldSetterChk' + headerIndex;
+	        var columnPropertyObj = columnsProperties[headerNames[headerIndex]];
+
+	        if ($(checkedId).attr('checked')) {
+	            if (curPropertyName == "String" || curPropertyName == "int" || curPropertyName == "float" || curPropertyName == "double" || curPropertyName == "boolean" || curPropertyName == "short" || curPropertyName == "byte") {
+	                columnPropertyObj["type"] = curPropertyName;
+	            } else if (curPropertyName == "stdAnalyzer") {
+	                columnPropertyObj["analyzed"] = "true";
+	                columnPropertyObj["biword"] = "true";
+	                columnPropertyObj["repeatable"] = "true";
+	                columnPropertyObj["analyzer"] = "org.apache.lucene.analysis.standard.StandardAnalyzer";
+	            } else {
+	                columnPropertyObj[curPropertyName] = "true";
+	            }
+	        } else {
+	            if (curPropertyName == "stdAnalyzer") {
+	                columnPropertyObj["analyzed"] = "false";
+	                columnPropertyObj["biword"] = "false";
+	                columnPropertyObj["analyzer"] = "";	                
+	            } else if(curPropertyName == "stored") {
+		                columnPropertyObj[curPropertyName] = "false";
+		                columnPropertyObj["indexed"] = "false";
+	            } else {
+	                columnPropertyObj[curPropertyName] = "false";
+	            }
+	        }
+	    }
+	    $.modal.close();
+	}
+
+	function applyFieldAll(btnObj) {
+
+	    var checkAll = false;
+	    if (btnObj.value == "Select All") {
+	        checkAll = true;
+	        btnObj.value = "Deselect All";
+	    }  else {
+	        checkAll = false;
+	        btnObj.value = "Select All";
+	    }
+
+	    for (var headerIndex in headerNames) {
+	        var checkedId = '#divFieldSetterChk' + headerIndex;
+	        var columnPropertyObj = columnsProperties[headerNames[headerIndex]];
+	        if (checkAll) ($(checkedId).attr('checked', 'checked'));
+	        else $(checkedId).removeAttr('checked');
+	    }
+	}
+	
+</script>
+</head>
+<body>
+<div style="width:830px;height:100%;margin:0 auto;">
+	<table style="width:830px;height:100%;border: none;">
+	
+		<tr>
+			<td style="width:42%;text-align:left" align="left">
+				<a href="http://www.hadoopsearch.net" target="_blank"><img style="height:50px;width:190px" src="images/hsearch-logo.png" /></a>	
+			</td>
+			<td style="width:58%;text-align:right" align="right">
+				<h1  style="font-size:22pt;">New Project</h1>
+			</td>
+		<tr>
+		
+		<tr>
+			
+			<td colspan="2" style="width:100%;">
+				
+				<table style="width:100%;">
+					<tr style="height:24px;">
+						<td class="slick-header-column" style="width:30%;text-align:center"><span class="slick-column-name">PROPERTY-NAME</span></td>
+						<td class="slick-header-column" style="width:70%;text-align:center"> <span class="slick-column-name">PROPERTY-VALUE</span></td>
+					</tr>
+					
+					<tr class="ui-widget-content" style="width:100%; height:24px">
+						<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+							Project Name (A valid java class name)
+						</td>
+						<td style="width:70%; height:24px;text-align:center">
+							<input style="width:90%;" type="text" id="txtProjectName"  name="txtProjectName" value="" />
+						</td>
+					</tr>
+	
+					<tr class="ui-widget-content" style="width:100%; height:24px;">
+						<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+							Datasource HDFS Path
+						</td>
+						<td style="width:70%; height:24px;text-align:center">
+							<input style="width:90%;" id="txtHdfsPath" name="txtHdfsPath" type="text" value="" />
+						</td>
+					</tr>
+				</table>
+				
+			<br />
+				
+	
+				
+				
+				<input type="button" name="loadButton" name="loadButton" style="height:40px; width: 150px;font-size:14px;" value="Get Top Rows" onclick="loadSampleData();"/>
+	
+				<div id="showDataDiv" style="display:none;">
+					<table id="dataoptionsTable" style="border:1px solid #000; padding:24px;margin-top:12px" >
+						<tr>
+							<td>
+								<span style="border:1px solid #808080; padding:6px; ">
+	                                <input type="radio" value="1" checked name="delim" onchange="repaintGrid()" />Tab
+								    <input type="radio" value="2" name="delim" onchange="repaintGrid()" />Comma
+								    <input type="radio" value="3" name="delim" onchange="repaintGrid()" />Semicolon
+								    <input type="radio" value="4" name="delim" onchange="repaintGrid()" />Space
+								    <input type="radio" value="5" name="delim" onchange="repaintGrid()" />Other
+								    <input type="text" value="" name="otherdelim" id="otherdelim" style="width:20px;" maxlength="1" disabled="disabled" onchange="repaintGridCustomDelim()" />
+								</span>
+								<input type="checkbox" name="isfirstheader"  id="isfirstheader" style="width:20px;" onchange="repaintGrid();" />First row is header
+								<input type="checkbox" name="incrementalindex"  id="incrementalindex" style="width:20px;" />Incremental Index
+							</td>
+						<tr>
+						<tr>
+							<td>
+	                            <hr />
+								<input type="button" class="setButtons" style="width:48px" value="Includes" onclick='setFields("Indexable Columns", "stored");'/>
+								<input type="button" class="setButtons" style="width:48px" value="Repeats" onclick='setFields("Repeat Fields", "repeatable");'/>
+								<input type="button" class="setButtons" value="Caches" onclick='setFields("Cache Fields", "cache");'/>
+								<input type="button" class="setButtons" style="width:54px" value="Compress" onclick='setFields("Compressed Fields", "compress");'/>
+								<input type="button" class="setButtons" value="Skips" onclick='setFields("Skip Null Fields", "skipNull");'/>
+								<input type="button" class="setButtons" style="width:100px" value="Standard Analyzer" onclick='setFields("Standard Analysis", "stdAnalyzer");'/>
+								<span style="color:#f00; margin-left:2px">|</span>
+	                            <input type="button" class="setButtons" value="String" onclick='setFields("String Fields", "String");'/>
+								<input type="button" class="setButtons" style="width:48px" value="Boolean" onclick='setFields("Boolean Fields", "boolean");'/>
+								<input type="button" class="setButtons" value="Byte" onclick='setFields("Byte Fields", "byte");'/>
+								<input type="button" class="setButtons" value="Short" onclick='setFields("Short Fields", "short");'/>
+								<input type="button" class="setButtons" value="Integer" onclick='setFields("Integer Fields", "int");'/>
+								<input type="button" class="setButtons" value="Float" onclick='setFields("Float Fields", "float");'/>
+								<input type="button" class="setButtons" value="Long" onclick='setFields("Long Fields", "long");'/>
+								<input type="button" class="setButtons" value="Double" onclick='setFields("Double Fields", "double");'/>
+	
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div style="padding-top:12px;">
+									<div class="grid-header" style="font-weight: bold;width:770px;"> Top Rows *Click on column header to set index property</div>
+									<div style="height:200px; width:770px;overflow:auto;">
+	                                    <div id="grdSampleData" style="height:172px; width:770px">Data Preview</div>
+									</div>
+	                                
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td align="center">
+								<input type="button" name="indexButton" name="indexButton" style="height:40px; width: 150px;font-size:14px;" value="Start Indexing" onclick="indexData();"/>
+								<input type="button" name="indexWithXmlButton" name="indexWithXmlButton" style="height:40px; width: 240px;font-size:14px;" 
+									value="Upload Schema and Start Indexing" onclick="indexDataWithSchemaUpload();"/>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</td>
+	
+		</tr>
+	
+	</table>
+</div>
+<div id="propertyWindowDiv" style="display:none;">
+<table>
+	<tr>
+		<td colspan="2">
+			<span id="propertyModalTitle" style="font-size: 18pt;">Properties</span>
+		<td>
+	</tr>
+	<tr>
+		<td>
+		<table>
+			<tr style="height:24px;">
+					<td class="slick-header-column" style="width:30%;text-align:center"><span class="slick-column-name">PROPERTY-NAME</span></td>
+					<td class="slick-header-column" style="width:70%;text-align:center"> <span class="slick-column-name">PROPERTY-VALUE</span></td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Field type
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<select style="width:90%;" id="txtFldType" name="txtFldType">
+							<option value="String">String</option>
+							<option value="int">int</option>
+							<option value="float">float</option>
+							<option value="double">double</option>
+							<option value="long">long</option>
+							<option value="short">short</option>
+							<option value="boolean">boolean</option>
+							<option value="byte">byte</option>
+						</select>
+					</td>
+				</tr>
+
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Index
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtIndex" name="txtIndex" type="checkbox" checked/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Store
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtStore" name="txtStore" type="checkbox" checked/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Is Repeatable
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtRepeatable" name="txtRepeatable" type="checkbox" checked/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Is Partition Key
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtPartitionKey" name="txtPartitionKey" type="checkbox" 
+						onchange=" $('#txtPartitionKey').attr('checked') ? $('#txtPartitionPos').removeAttr('disabled') : $('#txtPartitionPos').attr('disabled', 'disabled')"/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Partition Position
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" id="txtPartitionPos" name="txtPartitionPos" type="text" disabled="disabled"/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Cache
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtCache" name="txtCache" type="checkbox" checked/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Compress
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtCompress" name="txtCompress" type="checkbox"/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Analyze
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtAnalyze" name="txtAnalyze" type="checkbox"
+						onchange=" $('#txtAnalyze').attr('checked') ? $('#txtAnalyzer').removeAttr('disabled') : $('#txtAnalyzer').attr('disabled', 'disabled')
+								  $('#txtAnalyze').attr('checked') ? $('#txtBiWord').removeAttr('disabled') : $('#txtBiWord').attr('disabled', 'disabled')"/>
+					</td>
+				</tr>
+				
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Analyzer
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<select style="width:90%;" id="txtAnalyzer" name="txtAnalyzer" disabled="disabled">
+							<option value="org.apache.lucene.analysis.standard.StandardAnalyzer">org.apache.lucene.analysis.standard.StandardAnalyzer</option>
+							<option value="org.apache.lucene.analysis.KeywordAnalyzer">org.apache.lucene.analysis.KeywordAnalyzer</option>
+							<option value="org.apache.lucene.analysis.SimpleAnalyzer">org.apache.lucene.analysis.SimpleAnalyzer</option>
+							<option value="org.apache.lucene.analysis.WhitespaceAnalyzer">org.apache.lucene.analysis.WhitespaceAnalyzer</option>
+							<option value="com.bizosys.unstructured.StopwordAndSynonymAnalyzer">com.bizosys.unstructured.StopwordAndSynonymAnalyzer</option>
+						</select>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Biword Index
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtBiWord" name="txtBiWord" type="checkbox" disabled="disabled"/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Skip Null
+					</td>
+					<td style="width:70%; height:24px;text-align:left">
+						<input style="margin-left:12px;" id="txtSkipNull" name="txtSkipNull" type="checkbox" checked/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Default Value
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" id="txtDefaultValue" name="txtDefaultValue" type="text"/>
+					</td>
+				</tr>
+			</table>	
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" style="text-align: center;"><input type="button" value="Save" onclick="saveProperties();" style="height: 40px; width: 100px; margin-top: 24px;"></input></td>
+	</tr>
+</table>
+</div>
+
+<div id="uploadWindowDiv" style="display:none;">
+	<textarea id="xmlcontent" name="xmlcontent" style="height:350px; width:350px;">
+	</textarea>
+	<br />
+	<input type="button" value="Start Indexing" onclick="var schemaVal = ($('#xmlcontent').val()); if ( schemaVal.length > 0 ) startJob(schemaVal); " style="height: 40px; width: 100px; margin-left: 135px;" />
+</div>
+
+<div id="divFieldSetter" style="display:none;">
+    <span id="divFieldSetterHeader" style="font-size: 36px;" > Header </span>
+    <hr />
+    <div id="divFieldSetterChecked" style="height: 300px;width:350px;overflow:auto;" ></div>
+	<hr />
+    <input type="button" value="Select All" style="height: 40px; width: 100px;" onclick='applyFieldAll(this);' />
+	<input type="button" value="Apply" style="height: 40px; width: 100px; margin-left: 150px;" onclick="applyFieldSettings();" />
+</div>
+
+</body>
+</html>

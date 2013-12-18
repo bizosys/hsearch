@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+    <property>
+      <name>mapred.job.tracker</name>
+      <value>__JOBTRACKER__</value>
+    </property>
+
+    <property>
+      <name>mapreduce.jobtracker.http.address</name>
+      <value>__JOBURL__</value>
+    </property>
+
+    <property>
+      <name>mapred.child.java.opts</name>
+      <value>-Xmx2048m -XX:+UseConcMarkSweepGC</value>
+    </property>
+
+    <property>
+      <name>mapred.job.reuse.jvm.num.tasks</name>
+      <value>10</value>
+    </property>
+
+</configuration>

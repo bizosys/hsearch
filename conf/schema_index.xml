@@ -1,0 +1,12 @@
+<schema tableName="results" familyName="1" fieldSeparator="\t" voClass="com.bizosys.hsearch.console.crawler.ResultsVo">
+	<fields>
+		<field name="trackword" sourcesequence="0" sourcename="TRACKWORD" type="String" repeatable="true" indexed="true" mergekey="true" mergeposition="0" stored="true" skipNull="false" defaultValue="EXISTING" />
+		<field name="domain" sourcesequence="1" sourcename="DOMAIN" type="String" repeatable="true" indexed="true" stored="true" skipNull="false" defaultValue="-1" analyzed="false" compress="false" cache="true" />
+		<field name="keywords" sourcesequence="2" sourcename="KEYWORDS" type="String" skipNull="true" analyzer="com.bizosys.unstructured.StopwordAndSynonumAnalyzer" analyzed="true" indexed="true" stored="true" repeatable="true" defaultValue="-" cache="true" compress="false" />
+		<field name="title" sourcesequence="3" sourcename="title" type="String" skipNull="true" analyzer="com.bizosys.unstructured.StopwordAndSynonumAnalyzer" analyzed="true" indexed="true" stored="true" repeatable="true" defaultValue="-" cache="true" compress="false" />
+		<field name="url" sourcesequence="4" sourcename="URL" skipNull="true" type="String" analyzed="false" indexed="true" stored="true" repeatable="false" defaultValue="none" compress="false" cache="true" />
+		<field name="description" biword="true" sourcesequence="5" sourcename="description" type="String" skipNull="true" analyzer="com.bizosys.unstructured.StopwordAndSynonumAnalyzer" analyzed="true" indexed="true" stored="true" repeatable="true" defaultValue="-" cache="true" compress="false" />
+		<field name="content" sourcesequence="6" sourcename="content" type="String" skipNull="true" analyzer="com.bizosys.unstructured.StopwordAndSynonumAnalyzer" analyzed="true" indexed="true" stored="true" repeatable="true" defaultValue="-" cache="true" compress="false" />
+	</fields>
+</schema>
+

@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>HSearch - Indexing</title>
+
+<style type="text/css">
+	#statusFrame{
+		overflow: scroll;
+		position: absolute;
+		left : 0;
+		bottom: 0;
+		right: 0;
+		top:60px;
+	}
+</style>
+<script src="js/lib/jquery-1.7.min.js"></script>
+<script type="text/javascript">
+	
+	var returnUrl = null;
+	var project = null;
+	$(document).ready(function(){
+		var urlParams = getUrlVars(window.location.href);
+        returnUrl = urlParams["returnUrl"].trim();
+        project = urlParams["project"].trim();
+        $("#statusFrame").attr('src',returnUrl);
+	});
+	
+	function getUrlVars(url) {     
+	    var vars = [], hash;
+	    var hashes = url.slice(url.indexOf('?') + 1).split('&');
+	    for(var i = 0; i < hashes.length; i++) {
+	        hash = hashes[i].split('=');
+	        vars[hash[0]] = hash[1];
+	    }
+	    return vars;
+	}
+	
+	function gotoProject(){
+		window.location.href = "search.html?project=" + project;
+	}
+	
+</script>
+</head>
+<body>
+	<div>
+		<p>Check your job status below. When Complete click <a href="#" onclick="gotoProject();">here</a> to search your data.</p>
+		<iframe src="http://176.58.121.235:50030" id="statusFrame" height="100%" width="100%">
+		</iframe>
+	</div>
+</body>
+</html>

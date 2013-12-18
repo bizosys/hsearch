@@ -1,0 +1,28 @@
+<?xml version="1.0"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+	<property>
+		<name>hbase.cluster.distributed</name>
+		<value>true</value>
+	</property>
+	<property>
+		<name>hbase.rootdir</name>
+		<value>__HBASEROOTDIR__</value>
+	</property>
+	<property>
+		<name>hbase.zookeeper.quorum</name>
+		<value>__HBASEZOOKEEPER__</value>
+	</property>
+	<property>
+		<name>hbase.coprocessor.region.classes</name>
+		<value>com.bizosys.hsearch.treetable.storage.HSearchGenericCoprocessorImpl,com.bizosys.hsearch.treetable.storage.HSearchBytesCoprocessor
+		</value>
+	</property>
+	<property>
+		<name>hbase.hregion.max.filesize</name>
+		<value>1073741824</value>
+	</property>
+	<property>
+		<name>hbase.client.keyvalue.maxsize</name>
+		<value>-1</value>
+	</property>
+</configuration>

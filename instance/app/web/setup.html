@@ -1,0 +1,287 @@
+<!--  
+/*
+* Copyright 2013 Bizosys Technologies Limited
+*
+* Licensed to the Bizosys Technologies Limited (Bizosys) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The Bizosys licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+ -->
+
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>HSearch - Setup</title>
+  <link rel="shortcut icon" href="images/favicon.gif">
+  <link rel="stylesheet" href="css/slick.grid.css" type="text/css"/>
+  <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
+  <link rel="stylesheet" href="controls/slick.columnpicker.css" type="text/css"/>
+  <link rel="stylesheet" href="css/hsearch.css" type="text/css"/>
+  <link rel="stylesheet" href="css/slick-default-theme.css" type="text/css"/>
+  
+  <style>
+    .slick-cell-checkboxsel {
+      background: #f0f0f0;
+      border-right-color: silver;
+      border-right-style: solid;
+    }
+	
+    .cell-title {
+      font-weight: bold;
+    }
+
+    .cell-effort-driven {
+      text-align: center;
+    }
+  </style>
+  
+<script src="js/lib/firebugx.js"></script>
+
+<script src="js/lib/jquery-1.7.min.js"></script>
+<script src="js/lib/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="js/lib/jquery.event.drag-2.2.js"></script>
+
+<script src="js/slick.core.js"></script>
+<script src="js/plugins/slick.checkboxselectcolumn.js"></script>
+<script src="js/plugins/slick.autotooltips.js"></script>
+<script src="js/plugins/slick.cellrangedecorator.js"></script>
+<script src="js/plugins/slick.cellrangeselector.js"></script>
+<script src="js/plugins/slick.cellcopymanager.js"></script>
+<script src="js/plugins/slick.cellselectionmodel.js"></script>
+<script src="js/plugins/slick.rowselectionmodel.js"></script>
+<script src="controls/slick.columnpicker.js"></script>
+<script src="js/slick.formatters.js"></script>
+<script src="js/slick.editors.js"></script>
+<script src="js/slick.grid.js"></script>
+
+<script type="text/javascript">
+
+	var stepsGrid;
+
+	$(function () {
+		loadSteps() ;
+	});
+	
+	/** ********************************************** */
+	
+	function loadSteps() {
+		var data = [];
+		var options = {
+			editable: false,
+			enableCellNavigation: true,
+			asyncEditorLoading: false,
+			autoEdit: false
+		};
+		var i = 0;
+		var d = (data[i++] = {});
+		d[0] = "hsearch-core.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
+		d = (data[i++] = {});
+		d[0] = "hsearch-idsearch.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
+		d = (data[i++] = {});
+		d[0] = "hsearch-federated.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
+		d = (data[i++] = {});
+		d[0] = "lucene-queryparser-3.6.2.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
+		d = (data[i++] = {});
+		d[0] = "lucene-analyzers-3.6.2.jar  is in hadoop/lib and hbase/lib folder of all masters and slaves.";
+		d = (data[i++] = {});
+		d[0] = "lucene-core-3.6.2.jar  is in hadoop/lib and hbase/lib folder of all masters and slaves.";
+		d = (data[i++] = {});
+		d[0] = "Hadoop and HBase are  RESTARTED.";		
+
+		var checkboxSelector = new Slick.CheckboxSelectColumn({
+		  cssClass: "slick-cell-checkboxsel"
+		});
+
+		var columns = [];
+		columns.push(checkboxSelector.getColumnDefinition());
+
+		columns.push({
+			id: 0,
+			name: "SETUP STEPS *(Below libraries can be found under hsearch-console/WEB-INF/lib folder)",
+			field: 0,
+			width: 800,
+			editor: Slick.Editors.Text
+			
+		});
+
+		stepsGrid = new Slick.Grid("#grdDoneSteps", data, columns, options);
+		stepsGrid.setSelectionModel(new Slick.RowSelectionModel({selectActiveRow: false}));
+		stepsGrid.registerPlugin(checkboxSelector);	
+	}	
+	
+	
+
+	
+	
+    /** ********************************************** */
+	
+	function requiredFieldValidator(value) {
+		if (value == null || value == undefined || !value.length) {
+		  return {valid: false, msg: "This is a required field"};
+		} else {
+		  return {valid: true, msg: null};
+		}
+	}
+	
+	/** ********************************************** */
+	
+	function applyConfiguration() {
+		var selectedIndexes = stepsGrid.getSelectedRows();
+		var remainingSteps = stepsGrid.getData().length - selectedIndexes.length ;
+		if ( remainingSteps != 0 ) {
+			alert("Please finish all steps. You have " + remainingSteps + " steps more to complete.");
+			return;
+		}
+		
+		var hbaseRootdir = $('#txtHbaseRoot').val();
+		var hbaseZooKeeper = $('#txtZooKeeper').val();
+		var fsDefaultName = $('#txtFsDefaultName').val();
+		var jobTrackerAddr = $('#txtJobTrackerAddr').val();
+		var jobHttpAddr = $('#txtJobHttpAddr').val();
+
+		var xmlData = {
+			action: "hadoopsetup",
+			hbaserootdir : hbaseRootdir,
+			hbasezookeeper : hbaseZooKeeper,
+			fsdefaultname : fsDefaultName,
+			jobTrackerAddr : jobTrackerAddr,
+			jobHttpAddr : jobHttpAddr
+		}
+		$.ajax({
+			type: "POST",
+			async: false,
+			url: "setup.xml",
+			data: xmlData,
+			cache:false,
+			dataType: "text",
+			success: function onSuccess(data){	
+				window.location.href="index.html";
+			},
+			error: function onError(data){
+				alert(data);
+			}
+		});  
+		
+		
+	}	
+	
+	
+</script>
+</head>
+<body>
+
+<table style="height:100%; margin: 0 auto; border: none;">
+
+	<tr>
+		<td style="width:42%;">
+			<a href="http://www.hadoopsearch.net" target="_blank"><img height="50px" width="190px" src="images/hsearch-logo.png"></img></a>	
+		</td>
+		<td style="width:58%;text-align:right">
+			<h1  style="font-size:22pt;">Configuration</h1>
+		</td>
+	<tr>
+	
+	<tr>
+		<td colspan="2" style="width:100%;height:5%;" >
+			<div class="grid-header" style="font-weight:bold;">CONFIGURATION PROPERTIES</div>
+
+			<table style="width:100%;">
+				<tr style="height:24px;">
+					<td class="slick-header-column" style="width:30%;text-align:center"><span class="slick-column-name">PROPERTY-NAME</span></td>
+					<td class="slick-header-column" style="width:70%;text-align:center"> <span class="slick-column-name">PROPERTY-VALUE</span></td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						hbase.rootdir
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" type="text" id="txtHbaseRoot"  name="txtHbaseRoot" value="hdfs://localhost:8020/hbase"/>
+					</td>
+				</tr>
+
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						hbase.zookeeper.quorum
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" id="txtZooKeeper" name="txtZooKeeper" type="text" value="localhost" />
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						fs.default.name
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" type="text" id="txtFsDefaultName"  name="txtFsDefaultName" value="hdfs://localhost:8020"/>
+					</td>
+				</tr>
+
+				<tr class="ui-widget-content" style="width:100%; height:24px">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						mapred.job.tracker
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" type="text" id="txtJobTrackerAddr"  name="txtJobTrackerAddr" value=""/>
+					</td>
+				</tr>
+
+				<tr class="ui-widget-content" style="width:100%; height:24px">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						mapreduce.jobtracker.http.address
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" type="text" id="txtJobHttpAddr"  name="txtJobHttpAddr" value=""/>
+					</td>
+				</tr>
+				
+				<!--
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Stopwords
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" id="txtStopwords" name="txtStopwords" type="textbox"  value="a,am,the,are"/>
+					</td>
+				</tr>
+				
+				<tr class="ui-widget-content" style="width:100%; height:24px;">
+					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
+						Synonums
+					</td>
+					<td style="width:70%; height:24px;text-align:center">
+						<input style="width:90%;" id="txtSynonyms" name="txtSynonyms" type="textbox"  value="bangalore"/>
+					</td>
+				</tr>
+				-->
+			</table>
+			
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" style="width:100%;height:30%;text-align: left;">
+			<div id="grdDoneSteps" name="grdDoneSteps" style="height:232px; width:830px;margin-top:32px;">Settings</div>
+		</td>
+	<tr>
+	<tr>
+		<td colspan="2" style="width:100%;height:5%;text-align:center">
+			<input type="button" style="height:40px; font-size:14px" value="Apply Configuration" onclick="applyConfiguration();"/>
+		</td>
+	<tr>
+</table>
+</body>
+</html>
