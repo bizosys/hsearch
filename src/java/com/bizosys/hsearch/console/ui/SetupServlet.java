@@ -35,13 +35,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 import org.apache.log4j.Logger;
 
-import com.bizosys.hsearch.admin.ColGenerator;
+import com.bizosys.hsearch.idsearch.admin.ColGenerator;
 import com.bizosys.hsearch.kv.impl.FieldMapping;
 import com.oneline.util.StringUtils;
-import com.sun.tools.javac.Main;
 
 public class SetupServlet extends HttpServlet
 {
@@ -101,31 +102,49 @@ public class SetupServlet extends HttpServlet
 			String hbaseRootDir = req.getParameter("hbaserootdir");
 			String hbaseZookeeper = req.getParameter("hbasezookeeper");
 			String fsDefaultName = req.getParameter("fsdefaultname");
-			String jobTrackerAddr = req.getParameter("jobTrackerAddr");
+			String jobAddr = req.getParameter("jobTrackerAddr");
 			String jobHttpAddr = req.getParameter("jobHttpAddr");
-			
+			String jobHostname = req.getParameter("jobHostName");
+
+			String mrVersion = req.getParameter("mrVersion");
+			boolean ismrv1 = mrVersion.equalsIgnoreCase("mrv1"); 
+
 			hbaseRootDir = (null == hbaseRootDir) ? StringUtils.Empty : hbaseRootDir.trim();
 			hbaseZookeeper = (null == hbaseZookeeper) ? StringUtils.Empty : hbaseZookeeper.trim();
 			fsDefaultName = (null == fsDefaultName) ? StringUtils.Empty : fsDefaultName.trim();
-			jobTrackerAddr = (null == jobTrackerAddr) ? StringUtils.Empty : jobTrackerAddr.trim();
+			jobAddr = (null == jobAddr) ? StringUtils.Empty : jobAddr.trim();
 			jobHttpAddr = (null == jobHttpAddr) ? StringUtils.Empty : jobHttpAddr.trim();
+			jobHostname = (null == jobHostname) ? StringUtils.Empty : jobHostname.trim();
 
 			
 			String coreSiteContent = this.getFileContent("core-site-base");
 			String hbaseSiteContent = this.getFileContent("hbase-site-base");
-			String mapredSiteContent = this.getFileContent("mapred-site-base");
-			
+
 			coreSiteContent = (null == coreSiteContent) ? StringUtils.Empty : coreSiteContent.trim();
 			hbaseSiteContent = (null == hbaseSiteContent) ? StringUtils.Empty : hbaseSiteContent.trim();
-			mapredSiteContent = (null == mapredSiteContent) ? StringUtils.Empty : mapredSiteContent.trim();
-			
-			
 			coreSiteContent = coreSiteContent.replaceAll("__FSDEFAULT__", fsDefaultName);
 			hbaseSiteContent = hbaseSiteContent.replaceAll("__HBASEROOTDIR__", hbaseRootDir);
 			hbaseSiteContent = hbaseSiteContent.replaceAll("__HBASEZOOKEEPER__", hbaseZookeeper);
+
+			String mapredSiteContent = null;
+			String yarnSiteContent = null;
 			
-			mapredSiteContent = mapredSiteContent.replaceAll("__JOBTRACKER__", jobTrackerAddr);
-			mapredSiteContent = mapredSiteContent.replaceAll("__JOBURL__", jobHttpAddr);
+			if(ismrv1){
+				mapredSiteContent = this.getFileContent("mr1-base");
+				mapredSiteContent = (null == mapredSiteContent) ? StringUtils.Empty : mapredSiteContent.trim();
+				mapredSiteContent = mapredSiteContent.replaceAll("__JOBTRACKER__", jobAddr);
+				mapredSiteContent = mapredSiteContent.replaceAll("__JOBURL__", jobHttpAddr);				
+			} else {
+				mapredSiteContent = this.getFileContent("mr2-base");
+				mapredSiteContent = (null == mapredSiteContent) ? StringUtils.Empty : mapredSiteContent.trim();
+				mapredSiteContent = mapredSiteContent.replaceAll("__JOBURL__", jobHttpAddr);
+				
+				yarnSiteContent = this.getFileContent("mr2yarn-base");
+				yarnSiteContent = (null == yarnSiteContent) ? StringUtils.Empty : yarnSiteContent.trim();
+				yarnSiteContent = yarnSiteContent.replaceAll("__JOBHOSTNAME__", jobHostname);
+				yarnSiteContent = yarnSiteContent.replaceAll("__JOBADDR__", jobAddr);
+				yarnSiteContent = yarnSiteContent.replaceAll("__JOBURL__", jobHttpAddr);
+			}
 			
 			
 			File virginFile = new File(actualPath);
@@ -133,7 +152,6 @@ public class SetupServlet extends HttpServlet
 			{
 				File hbaseSiteFile = new File(virginFile.getParent() + "/" + "hbase-site.xml");
 				File coreSiteFile = new File(virginFile.getParent() + "/" + "core-site.xml");
-				File mapredSiteFile = new File(virginFile.getParent() + "/" + "mapred-site.xml");
 				
 				PrintWriter writer = null;
 				try
@@ -142,45 +160,39 @@ public class SetupServlet extends HttpServlet
 					writer.write(hbaseSiteContent);
 					
 				} finally {
-					if(null != writer)
-					{
-						try
-						{
-							writer.flush();
-							writer.close();
-						}
-						catch(Exception e){};
-					}
+					if(null != writer){try{writer.flush();writer.close();}catch(Exception e){};}
 				}
+
 				try{
 					writer = new PrintWriter(coreSiteFile, "UTF-8");
 					writer.write(coreSiteContent);
 					
 				}finally {
-					if(null != writer)
-					{
-						try
-						{
-							writer.flush();
-							writer.close();
-						}
-						catch(Exception e){};
+					if(null != writer){try{writer.flush();writer.close();}catch(Exception e){};}
+				}
+				
+				if(ismrv1){
+					File mapredSiteFile = new File(virginFile.getParent() + "/" + "mapred-site.xml");
+					try{	
+						writer = new PrintWriter(mapredSiteFile, "UTF-8");
+						writer.write(mapredSiteContent);
+					}finally{
+						if(null != writer){try{writer.flush();writer.close();}catch(Exception e){};}
+					}					
+				} else {
+					File mapredSiteFile = new File(virginFile.getParent() + "/" + "mapred-site.xml");
+					try{	
+						writer = new PrintWriter(mapredSiteFile, "UTF-8");
+						writer.write(mapredSiteContent);
+					}finally{
+						if(null != writer){try{writer.flush();writer.close();}catch(Exception e){};}
 					}
-				}
-				try{	
-					writer = new PrintWriter(mapredSiteFile, "UTF-8");
-					writer.write(mapredSiteContent);
-				}
-				finally
-				{
-					if(null != writer)
-					{
-						try
-						{
-							writer.flush();
-							writer.close();
-						}
-						catch(Exception e){};
+					File yarnSiteFile = new File(virginFile.getParent() + "/" + "yarn-site.xml");
+					try{	
+						writer = new PrintWriter(yarnSiteFile, "UTF-8");
+						writer.write(yarnSiteContent);
+					}finally{
+						if(null != writer){try{writer.flush();writer.close();}catch(Exception e){};}
 					}
 				}
 			}
@@ -225,12 +237,12 @@ public class SetupServlet extends HttpServlet
 				
 				compileArgs[index++] = libraryPath;
 				
-				System.out.println(libraryPath);
 				compileArgs[index++] = "-d";
 				compileArgs[index++] = valueObjectPath;
 				compileArgs[index++] = valueObjectPath + valueObjectClassName + ".java";
 				
-				Main.compile(compileArgs);
+				JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+				compiler.run(null, null, null, compileArgs);
 			}
 		}
 	}
@@ -270,12 +282,11 @@ public class SetupServlet extends HttpServlet
 				if ( null != bis) bis.close();
 			}
 	        String xmlText = builder.toString(); 
-	        System.out.println("xmlText\n" + xmlText);
 			productSearchProxy.setUp(xmlText);
 			
 			projects.put(projectName, productSearchProxy);
 			
-			LOG.debug("Fld mapping:" + productSearchProxy.fm.nameWithField);
+			LOG.debug("Fld mapping total size :" + productSearchProxy.fm.nameWithField.size());
 			
 		} 
 		catch (Exception e) 

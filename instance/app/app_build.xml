@@ -16,7 +16,7 @@
 		<fileset dir="${lib.dir}">
 			<include name="*.jar" />
 		</fileset>
-		<fileset dir="${lib.dir}hadoop">
+		<fileset dir="${hadooplib.dir}_${hadoolib.version}">
 			<include name="*.jar" />
 		</fileset>
 
@@ -47,7 +47,7 @@
 	  	<echo message="Base Directory: ${basedir} "/>
 	  	<echo message="Source Directory: ${src.dir} "/>
 	  	
-		<javac encoding="${build.encoding}" 
+		<javac 
 			destdir="${build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" 
 			target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
 			<classpath refid="classpath" />
@@ -65,9 +65,9 @@
 	<!--                                                                    -->
 	<!-- ================================================================== -->
 	<target name="jar" depends="compile-core">
-		<jar jarfile="${build.dir}/${name}.jar" basedir="${build.classes}">
+		<jar jarfile="${build.dir}/${jar.name}.jar" basedir="${build.classes}">
 		</jar>
-		<copy file="${build.dir}/${name}.jar" todir="."></copy>
+		<copy file="${build.dir}/${jar.name}.jar" todir="."></copy>
 	</target>
 
 	<!-- ================================================================== -->
@@ -92,7 +92,8 @@
 					<include name="@{jarfilestoinclude}"/>
 					<exclude name="rt.jar" />
 				</lib>
-				<lib dir="${lib.dir}hadoop" >
+				
+				<lib dir="${hadooplib.dir}_${hadoolib.version}" >
 					<include name="@{jarfilestoinclude}"/>
 					<exclude name="rt.jar" />
 				</lib>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+	<property>
+		<name>mapreduce.framework.name</name>
+		<value>yarn</value>
+	</property>
+	
+	<!-- This is used to display job in UI -->
+	<property>
+      <name>mapreduce.jobtracker.http.address</name>
+      <value>__JOBURL__</value>
+    </property>
+	
+	<property>
+		<name>mapreduce.shuffle.port</name>
+		<value>13562</value>
+	</property>
+</configuration>

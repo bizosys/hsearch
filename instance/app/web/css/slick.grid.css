@@ -16,6 +16,24 @@ classes should alter those!
   white-space: nowrap;
   cursor: default;
   overflow: hidden;
+  	line-height: 1.42857;
+	vertical-align: top;
+	border-top: 1px solid #dddddd;
+	border-left: 1px solid #eaebef;
+	font-size: 15px !important;
+	font-weight: bold;
+	color: #666;
+	text-shadow: 0 1px rgba(255, 255, 255, 0.5);
+	background: #eaeaea;
+	background-size: 100%;
+	background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #fdfdfd),color-stop(100%, #eaeaea) );
+	background-image: -webkit-linear-gradient(top, #fdfdfd, #eaeaea);
+	background-image: -moz-linear-gradient(top, #fdfdfd, #eaeaea);
+	background-image: -o-linear-gradient(top, #fdfdfd, #eaeaea);
+	background-image: linear-gradient(top, #fdfdfd, #eaeaea);
+	border-left: 1px solid #d1d2da;
+	border-right: 1px solid #d1d2da;
+	border-bottom: 1px solid #d1d2da;
 }
 
 .slick-header-column.ui-state-default {
@@ -24,15 +42,23 @@ classes should alter those!
   overflow: hidden;
   -o-text-overflow: ellipsis;
   text-overflow: ellipsis;
-  height: 16px;
-  line-height: 16px;
   margin: 0;
-  padding: 4px;
-  border-right: 1px solid silver;
-  border-left: 0px;
-  border-top: 0px;
-  border-bottom: 0px;
+  padding: 3px;
+  border: none;
+  border-right : 2px solid #CDCDCD;
   float: left;
+}
+.slick-header-columns {
+	text-align: left;
+}
+.slick-column-name {
+	overflow: hidden;
+	display: -webkit-box;
+	padding-left: 12px;
+}
+
+.slick-column-name input[type="checkbox"] {
+	margin-left: -8px;
 }
 
 .slick-headerrow-column.ui-state-default {
@@ -40,16 +66,16 @@ classes should alter those!
 }
 
 .slick-header-column-sorted {
-  font-style: italic;
+  color: #4390df;
 }
 
 .slick-sort-indicator {
-  display: inline-block;
-  width: 8px;
-  height: 5px;
-  margin-left: 4px;
-  margin-top: 6px;
-  float: left;
+	display: inline-block;
+	width: 8px;
+	height: 5px;
+	margin-left: 0px;
+	margin-top: -12px;
+	float: left;
 }
 
 .slick-sort-indicator-desc {
@@ -80,35 +106,66 @@ classes should alter those!
   outline: 0;
 }
 
+/* Row Styles */
+
 .slick-row.ui-widget-content, .slick-row.ui-state-active {
-  position: absolute;
-  border: 0px;
-  width: 100%;
+	position: absolute;
+	border: 0px;
+	width: 100%;
 }
+.slick-row {
+	background: #fff;
+	font-size: 0.9em;
+	border: 0px;
+	border-bottom: 1px solid #dddddd;
+}
+
+.slick-row.ui-state-active {
+  background: #F5F7D7;
+}
+
+.slick-row.odd {
+  background: #fafafa;
+}
+
+.slick-row.ui-state-active {
+  background: #F5F7D7;
+}
+
+.slick-row.odd:hover,.slick-row.even:hover{
+	background: #E7F7FC;
+	cursor: pointer;
+}
+
+.slick-row.selected {
+}
+
+/*Row Cell Style*/
 
 .slick-cell, .slick-headerrow-column {
   position: absolute;
-  border: 1px solid transparent;
-  border-right: 1px dotted silver;
-  border-bottom-color: silver;
+	padding: 4px;
+	vertical-align: top;
   overflow: hidden;
   -o-text-overflow: ellipsis;
   text-overflow: ellipsis;
   vertical-align: middle;
   z-index: 1;
-  padding: 1px 2px 2px 1px;
   margin: 0;
+  margin-right:-1px;
   white-space: nowrap;
   cursor: default;
+  border-right: 2px solid #CDCDCD;
 }
 
-.slick-group {
+.slick-cell.selected{
+	background-color: #E6FAB3 !important;
+	color: #000;
 }
 
-.slick-group-toggle {
-  display: inline-block;
+.slick-cell.active{
+	border-style: none; 
 }
-
 .slick-cell.highlighted {
   background: lightskyblue;
   background: rgba(0, 0, 255, 0.2);
@@ -134,6 +191,13 @@ classes should alter those!
   outline: none;
 }
 
+.slick-group {
+}
+
+.slick-group-toggle {
+  display: inline-block;
+}
+
 .slick-reorder-proxy {
   display: inline-block;
   background: blue;
@@ -154,4 +218,108 @@ classes should alter those!
   z-index: 10;
   position: absolute;
   border: 2px dashed black;
+}
+
+.slick-row.loading {
+  opacity: 0.5;
+  filter: alpha(opacity = 50);
+}
+
+.slick-cell.invalid {
+  border-color: red;
+  -moz-animation-duration: 0.2s;
+  -webkit-animation-duration: 0.2s;
+  -moz-animation-name: slickgrid-invalid-hilite;
+  -webkit-animation-name: slickgrid-invalid-hilite;  
+}
+
+@-moz-keyframes slickgrid-invalid-hilite {
+  from { box-shadow: 0 0 6px red; }
+  to { box-shadow: none; }
+}
+
+@-webkit-keyframes slickgrid-invalid-hilite {
+  from { box-shadow: 0 0 6px red; }
+  to { box-shadow: none; }
+}
+
+/*pager*/
+.slick-pager {
+	background: #eaeaea;
+	background-size: 100%;
+	background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #fdfdfd),color-stop(100%, #eaeaea) );
+	background-image: -webkit-linear-gradient(top, #fdfdfd, #eaeaea);
+	background-image: -moz-linear-gradient(top, #fdfdfd, #eaeaea);
+	background-image: -o-linear-gradient(top, #fdfdfd, #eaeaea);
+	background-image: linear-gradient(top, #fdfdfd, #eaeaea);
+	text-shadow: 0 1px white;
+	border-bottom: 1px solid #CDCDCD;
+	border-top: 1px solid #CDCDCD;
+	color: #666;
+	font-weight: bold;
+	padding: 8px;
+	margin-top: 2px;
+}
+.slick-pager .slick-pager-nav {
+	display: inline-block;
+	padding: 0 5px;
+}
+.ui-icon-seek-first:hover,.ui-icon-seek-prev:hover,.ui-icon-seek-next:hover,.ui-icon-seek-end:hover,.ui-icon-lightbulb:hover{
+	color: #428bca;
+	content: attr("First");
+}
+    
+.ui-icon-seek-first,.ui-icon-seek-prev,.ui-icon-seek-next,.ui-icon-seek-end,.ui-icon-lightbulb{
+	font-family: 'fontello' !important;
+	speak: none;
+	font-style: normal !important;
+	font-weight: normal !important;
+	font-variant: normal;
+	text-transform: none;
+	text-decoration: none;
+	line-height: 1;
+	display: inline-block;
+	vertical-align: -8%;
+	-webkit-font-smoothing: antialiased;
+	position: relative;
+	color: #646464;
+	margin-right: 8px;
+	cursor: pointer;
+}
+.ui-icon-seek-first:before {
+	content: '\e838';
+}
+.ui-icon-seek-prev:before{
+	content: '\e837';
+}
+.ui-icon-seek-next:before {
+	content: '\e835';
+}
+.ui-icon-seek-end:before {
+	content: '\e836';
+}
+.ui-icon-lightbulb:before {
+	content: '\e81f';
+}
+
+.ui-state-disabled{
+	opacity: .35;
+	filter: Alpha(Opacity=35);	
+}
+.ui-state-disabled:hover{
+	cursor: auto;
+	color: #646464; 
+}
+.slick-pager .slick-pager-status {
+}	
+.slick-pager .slick-pager-settings {
+	float: right;
+	display: inline-block;
+	padding: 0 4px;
+}
+
+.slick-pager .slick-pager-settings a {
+  padding: 2px;
+  text-decoration: underline;
+  cursor: pointer;
 }

@@ -30,6 +30,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +75,12 @@ public class SearchServlet extends HttpServlet
 	Configuration conf = new Configuration();
 	public int noOfLines = 5;
 	
+	Map<String, Map<String,String>> queries = null;
+	
+	@Override
+	public void init() throws ServletException {
+		queries = new HashMap<String, Map<String, String>>();
+	}
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) 
 	throws ServletException, IOException {
@@ -154,6 +161,15 @@ public class SearchServlet extends HttpServlet
 			else if (action.equals("refresh")) {
 				actionRefresh();
 			}
+			else if (action.equals("savequery")) {
+				actionSaveQuery(req, res, projectName);
+			}
+			else if (action.equals("getqueries")) {
+				actionGetQueries(req, res, projectName);
+			}
+			else if (action.equals("clearqueries")) {
+				queries.clear();
+			}
 		}
 		
 		catch (URISyntaxException e) {
@@ -180,6 +196,35 @@ public class SearchServlet extends HttpServlet
 	public void actionRefresh() {
 		LruCache.getInstance().clear();
 		if(INFO_ENABLED) LOG.info("Lru Cache is cleared.");
+	}
+	
+	public void actionSaveQuery(HttpServletRequest req, HttpServletResponse res, String projectName) throws IOException{
+
+		String queryName = req.getParameter("queryName");
+		String query = req.getParameter("query");
+		if(queries.containsKey(projectName)){
+			queries.get(projectName).put(queryName, query);
+		}else{
+			Map<String,String> projectQueries = new HashMap<String, String>();
+			projectQueries.put(queryName, query);
+			queries.put(projectName, projectQueries);
+		}
+	}
+	
+	public void actionGetQueries(HttpServletRequest req, HttpServletResponse res, String projectName) throws IOException{
+		PrintWriter out = res.getWriter();
+		Map<String,String> projectQueries = queries.get(projectName);
+		out.write("<response>");
+		for (String queryName : projectQueries.keySet()) {
+			out.write("<query>");
+			out.write("<name>");
+			out.write(queryName);
+			out.write("</name><value>");
+			out.write(projectQueries.get(queryName));
+			out.write("</value>");
+			out.write("</query>");
+		}
+		out.write("</response>");
 	}
 
 	public void actionDocumentUrlFld(PrintWriter out, String projectName) {
@@ -211,8 +256,9 @@ public class SearchServlet extends HttpServlet
 		hdfsFilePath = (null == hdfsFilePath) ? StringUtils.Empty : hdfsFilePath.trim();
 		
 		if(hdfsFilePath.length() == 0) throw new RuntimeException("HDFS Filepath is missing.");
+				
+		String [] args = new String[]{ "SF2HB", hdfsFilePath, "/tmp", projectName + ".xml", isHeader, "2"};
 		
-		String [] args = new String[]{ hdfsFilePath,   projectName + ".xml",isHeader};
 		String trackingUrl = "";
 		String mapredSiteLoc = webappsClassDirPath + "/" + "mapred-site.xml";
 		File file = new File(mapredSiteLoc);
@@ -238,7 +284,6 @@ public class SearchServlet extends HttpServlet
 		
 		if(trackingUrl.indexOf("http") == -1)
 			trackingUrl = "http://" + trackingUrl;
-		trackingUrl += "/jobtracker.jsp#running_jobs";
 		
 		Indexing indexer = new Indexing(args);
 		indexer.setDaemon(true);
@@ -403,7 +448,11 @@ public class SearchServlet extends HttpServlet
 					sb.append(line);
 					lineNo++;
 				}
-			} 
+				
+				if ( INFO_ENABLED ) LOG.info("Read data from hdfs lines = " + noOfLines);
+			}else{
+				sb.append("File does not exists in HDFS. File = " + hadoopPath);
+			}
 		}
 		catch (FileNotFoundException fex) 
 		{
@@ -421,46 +470,7 @@ public class SearchServlet extends HttpServlet
 		}
 		return sb.toString();
 	}
-	
-	private String getFileData(String path) throws IOException
-	{
-		StringBuilder sb = new StringBuilder();
-		BufferedReader br = null;
-		FileSystem fs = null;
-		try 
-		{
-			Path hadoopPath = new Path(path);
-			fs = FileSystem.get(conf);
-			if (fs.exists(hadoopPath)) 
-			{
-				br = new BufferedReader(new InputStreamReader(fs.open(hadoopPath)));
-				String line = null;
-				boolean first = true;
-				while ((line = br.readLine()) != null) 
-				{
-					if(first) first = false;
-					else sb.append('\n');
-					sb.append(line);
-				}
-			} 
-		}
-		catch (FileNotFoundException fex) 
-		{
-			System.err.println("Cannot read from path " + path);
-			throw new IOException(fex);
-		} 
-		catch (Exception pex) {
-			System.err.println("Error : " + path);
-			throw new IOException(pex);
-		}
-		finally
-		{
-			if(null != br) try{ br.close();}catch(Exception e){}
-			if(null != fs) try{ fs.close();}catch(Exception e){}
-		}
-		return sb.toString();
-	}
-	
+		
 	private String doSearch(String projectName, String mergeId,  String selectFields, String whereFilter, 
 		String sortFields, String facetFields, int offset, int pageSize) throws IOException 
 	{
@@ -473,6 +483,7 @@ public class SearchServlet extends HttpServlet
 			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setVersion(1.0).create();
 			results.append("{\"offset\":").append(offset).append(",\"pagesize\":").append(pageSize);
 			results.append(",\"count\":").append(found.found);
+			results.append(",\"time\":").append(found.responseTime);
 			results.append(",\"records\":");
 			results.append(gson.toJson(found.records));
 			results.append("}");
@@ -546,6 +557,7 @@ public class SearchServlet extends HttpServlet
 	 * @param mergeId
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private void testSetup(String projectName, String mergeId) throws Exception
 	{
 		SearchAdapter productSearchProxy = getProjectProxy(projectName);

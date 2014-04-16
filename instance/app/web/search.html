@@ -1,675 +1,807 @@
-<!--  
-/*
-* Copyright 2013 Bizosys Technologies Limited
-*
-* Licensed to the Bizosys Technologies Limited (Bizosys) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The Bizosys licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
- -->
+
 <!DOCTYPE HTML>
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-  <title>HSearch Console - Search</title>
-
+  <title>HSearch - Analysis</title>
   <link rel="shortcut icon" href="images/favicon.gif">
-  <link rel="stylesheet" href="css/slick.grid.css" type="text/css"/>
-  <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
-  <link rel="stylesheet" href="controls/slick.columnpicker.css" type="text/css"/>
-  <link rel="stylesheet" href="css/hsearch.css" type="text/css"/>
-  <link rel="stylesheet" href="css/modal.css" type="text/css"/>
+  
   <link rel="stylesheet" href="css/slick-default-theme.css" type="text/css"/>
+
+  <link rel="stylesheet" href="css/slick.grid.css" type="text/css"/>
+  <link rel="stylesheet" href="css/slick.columnpicker.css" type="text/css"/>
+  
+  <link href="css/bootstrap.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="css/hsearch.css" type="text/css"/>
   
   <style>
-    .slick-cell-checkboxsel {
-      background: #f0f0f0;
-      border-right-color: silver;
-      border-right-style: solid;
-    }
-	
     .cell-title {
       font-weight: bold;
     }
 
     .cell-effort-driven {
-      text-align: center; 
+      text-align: center;
     }
-	
-	 .loading-indicator {
-      display: inline-block;
-      padding: 12px;
-      background: white;
-      -opacity: 0.5;
-      color: black;
-      font-weight: bold;
-      z-index: 9999;
-      border: 1px solid red;
-      -moz-border-radius: 10px;
-      -webkit-border-radius: 10px;
-      -moz-box-shadow: 0 0 5px red;
-      -webkit-box-shadow: 0px 0px 5px red;
-      -text-shadow: 1px 1px 1px white;
+
+    .cell-selection {
+      border-right-color: silver;
+      border-right-style: solid;
+      background: #f5f5f5;
+      color: gray;
+      text-align: right;
+      font-size: 10px;
     }
-	
+
+    .slick-row.selected .cell-selection {
+      background-color: transparent; /* show default selected row background */
+    }
+    #msgArea{
+        color:rgb(241, 110, 110);
+        font-family: 'Segoe UI', 'Open Sans', Verdana, Arial, Helvetica,sans-serif;
+        font-weight: normal;
+	}
+    
+    
   </style>
-  
+</head>
+<body>
+<div id="wrapper">
+	<div class="navbar navbar-default navbar-fixed-top" data-role="navigation">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle" data-toggle="collapse"
+					data-target=".navbar-collapse">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand logo-nav" href="http://www.hadoopsearch.net" target="_blank">
+					<img height="50px" width="190px" src="images/hsearch-logo.png" />
+				</a>
+			</div>
+			<div class="collapse navbar-collapse collapse">
+				<ul class="nav navbar-nav navbar-right">
+					<li style="background:none;padding-right: 5px;"><a href="https://github.com/bizosys?tab=repositories">Follow In GitHub</a></li>
+				</ul>
+			</div>
+			<!-- /.navbar-collapse -->
+		</div>
+		<!-- /.container -->
+	</div>
+				
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="tableContainer">
+					<div class="tableHeader" style="height: 42px; min-height: 42px;line-height: 42px;padding: 0px">
+						<span class="col-md-5">
+							<input type="button" class="txtBtn blueBg" onclick="document.location.href = 'projects.html'" value="Home" />
+							<input type="button" class="txtBtn blueBg" onclick="saveQuery();" value="Save Query" />
+							<input type="button" class="txtBtn blueBg" onclick="getQueries();" id="getQueryBtn" value="Get Saved Queries" />
+						</span>
+						<span class="col-md-1" style="text-align: right;">
+							Search
+						</span>
+						<span class="col-md-6" style="text-align: right;">
+							<span id="msgArea"></span>
+							<input type="button" class="txtBtn blueBg" style="text-decoration: none;" value="Refresh Cache" onclick="refresh();">
+							<input type="button" onclick="goToByScroll('#divHelp');" class="txtBtn blueBg" value="Help" style="text-decoration: none;">
+						</span>
+					</div>
+					<div class="tableContent" style="padding: 15px">
+						<div class="col-md-3" style="padding: 0">
+							<select id="partitionKeysSelect" name="partitionKeysSelect" class="form-control" style="display: inline-block;" onchange="onPartitionKeyChange();">
+								<option>Select Your Dataset</option>
+							</select>
+						</div>
+						<div class="col-md-8" style="padding: 0 4px">
+							<input type="text" value="" name="searchText" id="searchText" placeholder="Enter your search parameters here" spellcheck="false" class="form-control"/>
+						</div>
+						<div class="col-md-1" style="padding: 0">
+							<input type="button" id="search" name="search" value="Analyze" onclick="doSearch();" class="txtBtn greenBg" style="width: 100%;padding: 7px 0;"/>
+						</div>
+						<div class="col-md-12" style="margin: 2px 0"></div>
+						<div class="col-md-3" style="padding: 0">
+							<div class="tableContainer">
+								<div class="tableHeader">
+									Repeatable Fields
+								</div>
+								<div class="tableContent">
+									<select id="tabFldsSelect" name="tabFldsSelect" style="-webkit-border-radius: 0;-moz-border-radius: 0;border-radius: 0; " class="form-control" onchange="onTabFldChange();">
+										<option>Select Repeatable Field</option>
+									</select>
+									<div id="grdTabFlds" style="height:458px; width:100%">Tab Fields</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-9" style="padding:0 0 0 4px">
+							<div class="tableContainer">
+								<div class="tableHeader">
+									<span id="lblSearch">No search word yet. </span>
+								</div>
+								<div class="tableContent">
+									<div id="grdResults" style="height:450px; width:100%;">Search Results</div>
+								</div>
+								<div id="pager"></div>
+							</div>
+						</div>
+
+			<!-- Modal Queries-->
+				<div class="modal fade" id="queriesDiv" tabindex="-1" data-role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+				  <div class="modal-dialog" style="height: 90% !important;width:92% !important;overflow:auto;">
+				    <div class="modal-content">
+				      <div class="modal-header">
+				        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				        <h4 class="modal-title">Your saved queries.</h4>
+				      </div>
+				      <div class="modal-body" id="queryContent" style="padding: 5px;">
+				      </div>
+				      <div class="modal-footer" style="text-align: center;">
+						    <input type="button" value="Analyze" class="txtBtn greenBg" onclick="savedQuerySelected();" />
+				      </div>
+				    </div><!-- /.modal-content -->
+				  </div><!-- /.modal-dialog -->
+				</div><!-- /.modal -->
+						
+					<div id="divHelp" class="col-md-12" style="padding: 0">
+						<div class="tableContainer">
+							<div class="tableHeader">
+								Search Help
+							</div>
+						<div class="tableContent">
+							<div class="col-md-6" style="padding: 15px;">
+								<div class="tableContent" style="border: 1px solid #cdcdcd;height: 250px;">
+									<p class="tableHeader">HSearch Queries</p>
+									<div style="padding: 10px;">
+										<b>Exact Match :</b> sex:Male<br/>
+										<b>Phrase Match :</b> city:"New york"<br/>
+										<b>Not Match :</b> sex:!"Male"<br/>
+										<b>In Match :</b> days:{"Monday","Sunday"}<br/>
+										<b>Range Match :</b> age:[10 : 20]<br/>
+										<br/>
+										Eg : (sex:"Male" AND days:{"Monday","Sunday"} AND age:!18) OR (sex:"Female" and age:18)
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6" style="padding: 15px;">
+								<div class="tableContent" style="border: 1px solid #cdcdcd;height: 250px;">
+									<p class="tableHeader">Sorting</p>
+									<div style="padding: 10px;">
+										Sorting can be done on multiple fields.<br/>
+										<b>Sort Ascending :</b> ^sex<br/>
+										<b>Sort Descending:</b> sex<br/><br/>
+										Eg : For sorting on two fields namely sex first (descending order) and then age, we can give as :<br/>
+										<b>sort(sex,^age)</b>	
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6" style="padding: 15px;">
+								<div class="tableContent" style="border: 1px solid #cdcdcd;height: 250px;">
+									<p class="tableHeader">Facetting</p>
+									<div style="padding: 10px;">
+										To get facet and facet count for particular fields we can give a 
+										comma separated list of fields to perform the facet.
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6" style="padding: 15px;">
+								<div class="tableContent" style="border: 1px solid #cdcdcd;height: 250px;">
+									<p class="tableHeader">Pagination</p>
+									<div style="padding: 10px;">
+										Results pagination can be done by giving below two parameters : <br/>
+										<b>offset :</b> The starting point for pagination.<br/>
+										<b>pagesize :</b> The number of records in single page.(-1 is unlimited)
+									</div>
+								</div>
+							</div>
+						</div>
+						<div style="clear: both;"></div>
+					</div>
+				</div>
+					<div style="clear: both;"></div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>
+</div>
+
 <script src="js/lib/firebugx.js"></script>
 
 <script src="js/lib/jquery-1.7.min.js"></script>
 <script src="js/lib/jquery-ui-1.8.16.custom.min.js"></script>
-<script src="js/lib/jquery.simplemodal.js"></script>
-<script src="js/lib/modal.js"></script>
 <script src="js/lib/jquery.event.drag-2.2.js"></script>
+<script src="js/bootstrap.js"></script>
 
 <script src="js/slick.core.js"></script>
-<script src="js/plugins/slick.checkboxselectcolumn.js"></script>
-<script src="js/plugins/slick.autotooltips.js"></script>
-<script src="js/plugins/slick.cellrangedecorator.js"></script>
-<script src="js/plugins/slick.cellrangeselector.js"></script>
-<script src="js/plugins/slick.cellcopymanager.js"></script>
-<script src="js/plugins/slick.cellselectionmodel.js"></script>
-<script src="js/plugins/slick.rowselectionmodel.js"></script>
-<script src="controls/slick.columnpicker.js"></script>
-<script src="controls/slick.pager.js"></script>
 <script src="js/slick.formatters.js"></script>
 <script src="js/slick.editors.js"></script>
+<script src="js/plugins/slick.checkboxselectcolumn.js"></script>
+<script src="js/plugins/slick.rowselectionmodel.js"></script>
 <script src="js/slick.grid.js"></script>
 <script src="js/slick.dataview.js"></script>
+<script src="js/my.pager.js"></script>
+<script src="js/slick.columnpicker.js"></script>
+
+<script>
+
+var PAGESIZE = 50;
+var tabCountGrid;
+var sortcol = null;
+var sortdir = 1;
+var projectName = "";
+var selectFields = "";
+var whereFilter = "";
+var resultColumns = [];
+var selectFields = "";
+var documentUrlFldResponseText = "unknown";
 
 
-<script type="text/javascript" >
-(function ($) {
- 
-  function RemoteModel() {
-    // private
-    var PAGESIZE = 50;
-    var data = {length: 0};
-    var sortcol = null;
-    var sortdir = 1;
-    var h_request = null;
-	var projectName = "";
-	var selectFields = "";
-	var whereFilter = "";
-	
-    var req = null; // ajax request
-
-    // events
-    var onDataLoading = new Slick.Event();
-    var onDataLoaded = new Slick.Event();
-
-
-    function init() {
-    }
-
-    function isDataLoaded(from, to) {
-      for (var i = from; i <= to; i++) {
-        if (data[i] == undefined || data[i] == null) {
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-
-    function clear() {
-      for (var key in data) {
-        delete data[key];
-      }
-      data.length = 0;
-    }
-
-    function ensureData(from, to) {
-    
-    	if ( projectName.length == 0 || selectFields.length == 0 ) {
-			showMessage("Project is not set.");
-			return;
-		}
-	
-	
-		if (req) {
-	        req.abort();
-	        for (var i = req.fromPage; i <= req.toPage; i++)
-	          data[i * PAGESIZE] = undefined;
-		}
-
-		if (from < 0) from = 0;
-	
-		var fromPage = Math.floor(from / PAGESIZE);
-		var toPage = Math.floor(to / PAGESIZE);
-	  
-		if (h_request != null) {
-			clearTimeout(h_request);
-		}
-		
-    	if ( fromPage == lastFrom)
-			return;
-		else
-			lastFrom = fromPage;
-		loadingIndicator.show();
-		
-		h_request = setTimeout(function () {
-
-		 	// null indicates a 'requested but not available yet
-			for (var i = fromPage; i <= toPage; i++) data[i * PAGESIZE] = null;
-			onDataLoading.notify({from: from, to: to});
-			var sortBy =  "";
-			if (sortcol != null) {
-				sortBy = ((sortdir > 0) ? "^" : "") + sortcol;
-			}
-		
-			var xmlData = {
-				service: "service",
-				action: "search",
-				project: projectName,
-				mergeid: $("#partitionKeysSelect option:selected").text(),
-				select: selectFields,
-				filter: whereFilter,
-				offset: (fromPage * PAGESIZE),
-				pagesize: (((toPage - fromPage) * PAGESIZE) + PAGESIZE),
-				sort: sortBy
-			};		
-		
-			$.ajax({
-				type: "POST",
-				async: false,
-				url: "process.xml",
-				data: xmlData,
-				cache:false,
-				dataType: "text",
-				success: function onSuccess(responseData){
-					if(null != responseData) {
-						var searchResultsJsonObj = eval( '(' + responseData + ')');
-						var pagesT =  searchResultsJsonObj.count / PAGESIZE;
-						for (var i = 0; i <= pagesT; i++) data[i * PAGESIZE] = null;
-						
-						$("#lblSearch").html("Total results found " + searchResultsJsonObj.count);
-						
-						var records = searchResultsJsonObj.records;
-						if( null == searchResultsJsonObj) data.length = 0;
-						else data.length = Math.min(parseInt(searchResultsJsonObj.count),1000000); // limitation of the API 
-						
-						var resultColumnsLower = [];
-						for(var columnI in resultColumns) {
-							resultColumnsLower[columnI] = resultColumns[columnI].toLowerCase();
-						}
-						
-						
-						for(var rowIndex in records)
-						{	
-							var index = parseInt(rowIndex);
-							var item = [];
-							for(var columnI in resultColumns)
-							{
-								item[resultColumns[columnI]] = records[rowIndex][resultColumnsLower[columnI]];
-							}
-							data[index + from ] = item;
-							data[index + from ].index = from ;
-							
-						}
-					} else {
-						data.length = 0;
-					}
-				},
-				error: function onError(data)
-				{
-					showMessage("Search Error :" + data.responseText);
-					return false;
-				}
-			});  
-
-			req = null;
-			onDataLoaded.notify({from: from, to: to});				
-	    },1000);
-	 }
-
-
-    function reloadData(from, to) {
-		for (var i = from; i <= to; i++) delete data[i];
-		ensureData(from, to);
-    }
-
-
-    function setSort(column, dir) {
-      sortcol = column;
-      sortdir = dir;
-      clear();
-    }
-
-    function setSearch(str) {
-      whereFilter = str;
-      clear();
-    }
-	
-	function setProjectName(str) {
-      projectName = str;
-    }
-
-	function setSelectFields(str) {
-      selectFields = str;
-    }
-
-
-    init();
-
-    return {
-      // properties
-      "data": data,
-
-      // methods
-      "clear": clear,
-      "isDataLoaded": isDataLoaded,
-      "ensureData": ensureData,
-      "reloadData": reloadData,
-      "setSort": setSort,
-      "setSearch": setSearch,
-	  "setProjectName": setProjectName,
-	  "setSelectFields": setSelectFields,
-
-      // events
-      "onDataLoading": onDataLoading,
-      "onDataLoaded": onDataLoaded
-    };
-  }
-
-  // Slick.Data.RemoteModel
-  $.extend(true, window, { Slick: { Data: { RemoteModel: RemoteModel }}});
-})(jQuery);
-
-	var tabCountGrid;
-	var projectName = "";
-	var resultColumns = [];
-	var selectFields = "";
-	var lastFrom = -999;	
-
-
-	var grid;
-	var loader = new Slick.Data.RemoteModel();
-	
-	var documentUrlFldResponseText = "unknown";
-	$(function () {
-		defaultLoad();
-		initSearch();
-		loader.setProjectName(projectName);
-		loader.setSelectFields(selectFields);
-	});
-	
-	function defaultLoad()
-	{
-		var queryString = window.location.href.split('?')[1];
-		if(!queryString)
-		{
-			showMessage('Unknown project.');
-			return;
-		}
-		var paramValueStrL = queryString.split('&');
-		var paramValueL = [];
-		for(var paramValue in paramValueStrL)
-		{
-			var keyValue = paramValueStrL[paramValue].split('=');
-			var keyValueAbs = keyValue[1].split('#');
-			paramValueL[keyValue[0]] = keyValueAbs[0];
-		}
-		
-		projectName = paramValueL['project'];
-		if(!projectName)
-		{
-			showMessage('Unknown project.');
-			return;
-		}
-		//'process.xml?service=search&action=partitionkeys&project='+projectName,		
-		// AJAX call to get partition keys
-		var partitionKeysResponseJson = "[]";
-		var xmlData = {
-			service: "service",
-			action: "partitionkeys",
-			project: projectName
-		};
-		$.ajax({
-			type: "POST",
-			async: false,
-			url: "process.xml",
-			data: xmlData,
-			cache:false,
-			dataType: "text",
-			success: function onSuccess(data){
-				if(null != data)
-					partitionKeysResponseJson = data;
-				else
-					showMessage("Error in getting partiotin keys");
-			},
-			error: function onError(data)
-			{
-				showMessage("Error in getting partiotin keys");
-				return false;
-			}
-		});  
-		var partitionKeysObj = eval(partitionKeysResponseJson);
-		var partitionKeySelectElm = document.getElementById("partitionKeysSelect");
-		for(var keyIndex in partitionKeysObj)
-				partitionKeySelectElm[partitionKeySelectElm.options.length] = new Option(partitionKeysObj[keyIndex], keyIndex);
-		
-		
-		var tabFldResponseJson = '[]';
-		//'process.xml?service=search&action=tabflds&project=' + projectName,
-		// AJAX call to  get tab flds
-		xmlData = {
-			service: "service",
-			action: "tabflds",
-			project: projectName
-		};
-		$.ajax({
-			type: "POST",
-			async: false,
-			url: "process.xml",
-			data: xmlData,
-			cache:false,
-			dataType: "text",
-			success: function onSuccess(data){
-				if(null != data)
-					tabFldResponseJson = data;
-			},
-			error: function onError(data)
-			{
-				showMessage("Error in getting tab fields");
-				return false;
-			}
-		});  
-		
-		var tabFldJsonObj = eval(tabFldResponseJson);
-		var tabFlds = [];
-		for(var index in tabFldJsonObj)
-			tabFlds[index] = tabFldJsonObj[index].name;
-		
-		var tabFldsSelectElem = document.getElementById("tabFldsSelect");
-		var data = [];
-		for(var tabIndex in tabFlds)
-			tabFldsSelectElem[tabFldsSelectElem.options.length] = new Option(tabFlds[tabIndex], tabIndex);
-		
-		// AJAX Call to get display flds
-		var displayFldsResponseJson = '[]';
-		xmlData = {
-			service: "service",
-			action: "displayflds",
-			project: projectName,
-			mergeid: $("#partitionKeysSelect option:selected").text()
-		};
-		$.ajax({
-			type: "POST",
-			async: false,
-			url: "process.xml",
-			data: xmlData,
-			cache:false,
-			dataType: "text",
-			success: function onSuccess(data){
-				if(null != data)
-					displayFldsResponseJson = data;
-			},
-			error: function onError(data)
-			{
-				showMessage("Error in getting display fields");
-				return false;
-			}
-		});  
-
-		var displayFldsObj = eval(displayFldsResponseJson);
-		for(var index in displayFldsObj)
-		{
-			resultColumns.push(displayFldsObj[index].name);
-			if(index > 0)
-				selectFields = selectFields + ",";
-			
-			selectFields = selectFields + displayFldsObj[index].name;
-		}
-		
-		// AJAX Call to get documenturl fld
-		//'process.xml?service=search&action=documenturlfld&project='+projectName,
-		documentUrlFldResponseText = 'unknown';
-		xmlData = {
-			service: "service",
-			action: "documenturlfld",
-			project: projectName
-		};
-		$.ajax({
-			type: "POST",
-			async: false,
-			url: "process.xml",
-			data: xmlData,
-			cache:false,
-			dataType: "text",
-			success: function onSuccess(data){
-				if(null != data)
-					documentUrlFldResponseText = data;
-			},
-			error: function onError(data)
-			{
-				showMessage("Error in getting docuement url fields");
-				return false;
-			}
-		});  
-		
-		fetchTabCount($("#tabFldsSelect option:selected").text());
-	}
-	
-	function onPartitionKeyChange()
-	{
-		$('#tabFldsSelect option')[0].selected = true;
-		$('#searchText').val('');
-		onTabFldChange();
-	}
-	
-	function onTabFldChange()
-	{	
-		var selectedTabFld = $("#tabFldsSelect option:selected").text();
-		fetchTabCount(selectedTabFld);
-	}
-	
-	var lastSelectedRows = [];
-	function fetchTabCount(tabFld)
-	{
-		
-		// AJAX Call to fetch tab count
-		var tabFldCountResponseJson = '[]';
-		//
-		xmlData = {
-			service: "service",
-			action: "tabcount",
-			project: projectName,
-			mergeid:  $("#partitionKeysSelect option:selected").text(),
-			fld: tabFld,
-			filter: $('#searchText').val().trim()
-		};
-		$.ajax({
-			type: "POST",
-			async: false,
-			url: "process.xml",
-			data: xmlData,
-			cache:false,
-			dataType: "text",
-			success: function onSuccess(data){
-				if(null != data)
-					tabFldCountResponseJson = data;
-			},
-			error: function onError(data)
-			{
-				showMessage("Error in getting tab counts");
-				return false;
-			}
-		}); 
-		
-		var tabFldCountJsonObj = eval(tabFldCountResponseJson);
-
-		var checkboxSelector = new Slick.CheckboxSelectColumn({
-		  cssClass: "slick-cell-checkboxsel"
-		});
-		
-		var columns = [];
-		columns.push(checkboxSelector.getColumnDefinition());
-		columns.push({id: "name", name: "NAME", field: "name", width: 150, sortable: true});
-		columns.push({id: "count", name: "COUNT", field: "count", width: 70, sortable: true});
-		
-		var options = {
-			asyncEditorLoading: false,
-			autoEdit: false,
-			forceFitColumns: true 
-		};
-
-		var data = [];
-		for(var index in tabFldCountJsonObj)
-		{
-			var d = (data[index] = {});
-			d["name"] = tabFldCountJsonObj[index].name;
-			d["count"] = tabFldCountJsonObj[index].count;
-		}
-		tabCountGrid = new Slick.Grid("#grdTabFlds", data, columns, options);
-		tabCountGrid.setSelectionModel(new Slick.RowSelectionModel({selectActiveRow: false}));
-		tabCountGrid.onClick.subscribe( function (e){
-			var selectedCell  = tabCountGrid.getCellFromEvent(e);
-			if(selectedCell.cell > 0)
-				return;
-			
-			var selectedColumnVal = tabCountGrid.getData()[selectedCell.row].name;
-			if (selectedColumnVal.indexOf(" ") > 0) selectedColumnVal = "\"" + selectedColumnVal + "\"";
-			var selectedTabFld = $( "#tabFldsSelect option:selected").text();
-			
-			if(contains(lastSelectedRows, selectedColumnVal, true))
-			{
-				lastSelectedRows.pop(selectedColumnVal);
-				var searchText = $('#searchText').val();
-				searchText = searchText.replace( " AND " + selectedTabFld + ":" + selectedColumnVal, '');
-				searchText = searchText.replace( " OR " + selectedTabFld + ":" + selectedColumnVal, '');
-				searchText = searchText.replace(selectedTabFld + ":" + selectedColumnVal, '');
-				
-				if(searchText.substring(0, " AND" ) === " AND" )
-						searchText = searchText.substring(" AND".length);
-				else if(searchText.substring(0, " OR") === " OR" )
-						searchText = searchText.substring(" OR".length);
-				
-				$('#searchText').val(searchText);
-			}
-			else
-			{
-				lastSelectedRows.push(selectedColumnVal);
-				var searchText = $('#searchText').val();
-				if(searchText.length > 0)
-					searchText = searchText + " AND ";
-					
-				searchText = searchText + selectedTabFld + ":" + selectedColumnVal;
-				$('#searchText').val(searchText);
-			}
-		});
-		
-		tabCountGrid.registerPlugin(checkboxSelector);	
-		tabCountGrid.onSort.subscribe(function (e, args) {
-		var field = args.sortCol.field;
-		data.sort(function(a, b)
-		{
-            var result = 
-                a[field] > b[field] ? 1 :
-                a[field] < b[field] ? -1 :
-                0;
-            return args.sortAsc ? result : -result;
-        });
-		tabCountGrid.invalidate();    
-	  });
-	}
-	
-	/**
-	 * ######################################## SEARCH
-	 */
-	 
-  var dateFormatter = function (row, cell, value, columnDef, dataContext) {
-    return (value.getMonth()+1) + "/" + value.getDate() + "/" + value.getFullYear();
-  };
-
-  var options = {
+var dataView;
+var grid;
+var pager;
+var data = [];
+var columns = [];
+var options = {
     editable: false,
     enableAddRow: false,
     enableCellNavigation: false
-  };
+};
+var dateFormatter = function (row, cell, value, columnDef, dataContext) {
+    return (value.getMonth()+1) + "/" + value.getDate() + "/" + value.getFullYear();
+};
 
-  var loadingIndicator = null;
+var loadingIndicator = null;
 
-	function doSearch() {
-		lastFrom = -999;
-		var whereFilter = $('#searchText').val();
-		var len = (null == whereFilter) ? 0 : whereFilter.trim().length;
-		if(0 == len)
-			return;
-		loader.setSearch(whereFilter);
-		var vp = grid.getViewport();
-		loader.ensureData(vp.top, vp.bottom);
-	}
-  
-	function initSearch()
+$(function () {
+	defaultLoad();
+	initSearch();
+	setProjectName(projectName);
+	setSelectFields(selectFields);
+});
+
+function setSort(column, dir) {
+    sortcol = column;
+    sortdir = dir;
+}
+
+function setSearch(str) {
+   whereFilter = str;
+}
+
+function setProjectName(str) {
+   projectName = str;
+}
+
+function setSelectFields(str) {
+   selectFields = str;
+}
+
+function defaultLoad(){
+	var queryString = window.location.href.split('?')[1];
+	if(!queryString)
 	{
-		//initalize loading indicator
-		if (!loadingIndicator) {
-			loadingIndicator = $("<span class='loading-indicator'><label>Buffering...</label></span>").appendTo(document.body);
-			var $g = $("#grdResults");
-
-			loadingIndicator
-				.css("position", "absolute")
-				.css("display", "none")
-				.css("top", $g.position().top + $g.height() / 2 - loadingIndicator.height() / 2)
-				.css("left", $g.position().left + $g.width() / 2 - loadingIndicator.width() / 2);
-		}
+		showMessage('Unknown project.');
+		return;
+	}
+	var paramValueStrL = queryString.split('&');
+	var paramValueL = [];
+	for(var paramValue in paramValueStrL)
+	{
+		var keyValue = paramValueStrL[paramValue].split('=');
+		var keyValueAbs = keyValue[1].split('#');
+		paramValueL[keyValue[0]] = keyValueAbs[0];
+	}
 	
-		var columns = [];
-		for(var columnI in resultColumns)
+	projectName = paramValueL['project'];
+	if(!projectName)
+	{
+		showMessage('Unknown project.');
+		return;
+	}
+	//'process.xml?service=search&action=partitionkeys&project='+projectName,		
+	// AJAX call to get partition keys
+	var partitionKeysResponseJson = "[]";
+	var xmlData = {
+		service: "service",
+		action: "partitionkeys",
+		project: projectName
+	};
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(data){
+			if(null != data)
+				partitionKeysResponseJson = data;
+			else
+				showMessage("Error in getting partiotin keys");
+		},
+		error: function onError(data)
 		{
-			columns.push({id: resultColumns[columnI], name: resultColumns[columnI], field: resultColumns[columnI], width: 150, sortable: true});
-		}  
-	    //$("#grdResults").width((columns.length * 150) + 20 + "px");
-	   grid = new Slick.Grid("#grdResults", loader.data, columns, options);
+			showMessage("Error in getting partiotin keys");
+			return false;
+		}
+	});  
+	var partitionKeysObj = eval(partitionKeysResponseJson);
+	var partitionKeySelectElm = document.getElementById("partitionKeysSelect");
+	var len = 0;
+	var isFirst = true;
+	for(var keyIndex in partitionKeysObj){
+		len = partitionKeySelectElm.options.length;
+		partitionKeySelectElm[len] = new Option(partitionKeysObj[keyIndex], keyIndex);
+		if(isFirst){
+			partitionKeySelectElm[len].selected = "selected";
+			isFirst = false;
+		}
+	}
 
-		grid.onViewportChanged.subscribe(function (e, args) {
-			var vp = grid.getViewport();
-		  loader.ensureData(vp.top, vp.bottom);
-		});
+	var tabFldResponseJson = '[]';
+	//'process.xml?service=search&action=tabflds&project=' + projectName,
+	// AJAX call to  get tab flds
+	xmlData = {
+		service: "service",
+		action: "tabflds",
+		project: projectName
+	};
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(data){
+			if(null != data)
+				tabFldResponseJson = data;
+		},
+		error: function onError(data)
+		{
+			showMessage("Error in getting tab fields");
+			return false;
+		}
+	});  
+	
+	var tabFldJsonObj = eval(tabFldResponseJson);
+	var tabFlds = [];
+	
+	for(var index in tabFldJsonObj)
+		tabFlds[index] = tabFldJsonObj[index].name;
+	
+	var tabFldsSelectElem = document.getElementById("tabFldsSelect");
+	var data = [];
+		
+	len = 0;
+	isFirst = true;
 
-		grid.onSort.subscribe(function (e, args) {
-		  loader.setSort(args.sortCol.field, args.sortAsc ? 1 : -1);
-		  lastFrom = -999;
-		  var vp = grid.getViewport();
-		  loader.ensureData(vp.top, vp.bottom);
-		  grid.scrollRowIntoView(0);
-		});
+	tabFlds.sort();
+	for(var tabIndex in tabFlds){
+		len = tabFldsSelectElem.options.length;
+		tabFldsSelectElem[len] = new Option(tabFlds[tabIndex], tabIndex);
+		if(isFirst){
+			tabFldsSelectElem[len].selected = "selected";
+			isFirst = false;
+		}
+	}
 
-		loader.onDataLoading.subscribe(function () {
-		});
+	// AJAX Call to get display flds
+	var displayFldsResponseJson = '[]';
+	xmlData = {
+		service: "service",
+		action: "displayflds",
+		project: projectName,
+		mergeid: $("#partitionKeysSelect option:selected").text()
+	};
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(data){
+			if(null != data)
+				displayFldsResponseJson = data;
+		},
+		error: function onError(data)
+		{
+			showMessage("Error in getting display fields");
+			return false;
+		}
+	});  
 
-		loader.onDataLoaded.subscribe(function (e, args) {
-			for (var i = args.from; i <= args.to; i++) {
-				grid.invalidateRow(i);
-			}
-			grid.updateRowCount();
-			grid.render();
-			loadingIndicator.fadeOut();
-		});
+	var displayFldsObj = eval(displayFldsResponseJson);
+	displayFldsObj.sort(compare);
+	for(var index in displayFldsObj)
+	{
+		resultColumns.push(displayFldsObj[index].name);
+		if(index > 0)
+			selectFields = selectFields + ",";
+		
+		selectFields = selectFields + displayFldsObj[index].name;
 	}
 	
+	// AJAX Call to get documenturl fld
+	//'process.xml?service=search&action=documenturlfld&project='+projectName,
+	documentUrlFldResponseText = 'unknown';
+	xmlData = {
+		service: "service",
+		action: "documenturlfld",
+		project: projectName
+	};
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(data){
+			if(null != data)
+				documentUrlFldResponseText = data;
+		},
+		error: function onError(data)
+		{
+			showMessage("Error in getting docuement url fields");
+			return false;
+		}
+	});  
 	
-	function refresh()
+	fetchTabCount($("#tabFldsSelect option:selected").text());
+}
+
+//comparer sort fields
+function compare(a,b) {
+  if (a.name < b.name)
+     return -1;
+  if (a.name > b.name)
+    return 1;
+  return 0;
+}
+	
+function onPartitionKeyChange()
+{
+	$('#tabFldsSelect option')[0].selected = true;
+	$('#searchText').val('');
+	onTabFldChange();
+}
+
+function onTabFldChange()
+{	
+	var selectedTabFld = $("#tabFldsSelect option:selected").text();
+	fetchTabCount(selectedTabFld);
+}
+
+var lastSelectedRows = [];
+function fetchTabCount(tabFld)
+{
+	
+	// AJAX Call to fetch tab count
+	var tabFldCountResponseJson = '[]';
+	//
+	xmlData = {
+		service: "service",
+		action: "tabcount",
+		project: projectName,
+		mergeid:  $("#partitionKeysSelect option:selected").text(),
+		fld: tabFld,
+		filter: $('#searchText').val().trim()
+	};
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(data){
+			if(null != data)
+				tabFldCountResponseJson = data;
+		},
+		error: function onError(data)
+		{
+			showMessage("Error in getting tab counts");
+			return false;
+		}
+	}); 
+	
+	var tabFldCountJsonObj = eval(tabFldCountResponseJson);
+
+	var checkboxSelector = new Slick.CheckboxSelectColumn({
+	  cssClass: "slick-cell-checkboxsel"
+	});
+	
+	var columns = [];
+	columns.push(checkboxSelector.getColumnDefinition());
+	columns.push({id: "name", name: "Name", field: "name", width: 150, sortable: true});
+	columns.push({id: "count", name: "Count", field: "count", width: 70, sortable: true});
+	
+	var options = {
+	    editable: false,
+	    enableAddRow: false,
+	    enableCellNavigation: false,
+		forceFitColumns: true 
+	};
+
+	var data = [];
+	for(var index in tabFldCountJsonObj)
 	{
-		var xmlData = {
+		var d = (data[index] = {});
+		d["name"] = tabFldCountJsonObj[index].name;
+		d["count"] = tabFldCountJsonObj[index].count;
+	}
+	tabCountGrid = new Slick.Grid("#grdTabFlds", data, columns, options);
+	tabCountGrid.setSelectionModel(new Slick.RowSelectionModel({selectActiveRow: false}));
+	tabCountGrid.onClick.subscribe( function (e){
+		var selectedCell  = tabCountGrid.getCellFromEvent(e);
+		if(selectedCell.cell > 0)
+			return;
+		
+		if(!($(e.target)[0].className == ""))
+            return;
+		
+		var selectedColumnVal = tabCountGrid.getData()[selectedCell.row].name;
+		if (selectedColumnVal.indexOf(" ") > 0) selectedColumnVal = "\"" + selectedColumnVal + "\"";
+		var selectedTabFld = $( "#tabFldsSelect option:selected").text();
+		
+		if(contains(lastSelectedRows, selectedColumnVal, true))
+		{
+			lastSelectedRows.pop(selectedColumnVal);
+			var searchText = $('#searchText').val();
+			searchText = searchText.replace( " AND " + selectedTabFld + ":" + selectedColumnVal, '');
+			searchText = searchText.replace( " OR " + selectedTabFld + ":" + selectedColumnVal, '');
+			searchText = searchText.replace(selectedTabFld + ":" + selectedColumnVal, '');
+			
+			if(searchText.substring(0, " AND" ) === " AND" )
+					searchText = searchText.substring(" AND".length);
+			else if(searchText.substring(0, " OR") === " OR" )
+					searchText = searchText.substring(" OR".length);
+			
+			$('#searchText').val(searchText);
+		}
+		else
+		{
+			lastSelectedRows.push(selectedColumnVal);
+			var searchText = $('#searchText').val();
+			if(searchText.length > 0)
+				searchText = searchText + " AND ";
+				
+			searchText = searchText + selectedTabFld + ":" + selectedColumnVal;
+			$('#searchText').val(searchText);
+		}
+	});
+	
+	tabCountGrid.registerPlugin(checkboxSelector);	
+	tabCountGrid.onSort.subscribe(function (e, args) {
+	var field = args.sortCol.field;
+	data.sort(function(a, b)
+	{
+        var result = 
+            a[field] > b[field] ? 1 :
+            a[field] < b[field] ? -1 :
+            0;
+        return args.sortAsc ? result : -result;
+    });
+	tabCountGrid.invalidate();    
+  });
+}
+
+function doSearch() {
+	var whereFilter = $('#searchText').val();
+	var len = (null == whereFilter) ? 0 : whereFilter.trim().length;
+	if(0 == len){
+		alert("Please specify a search query.");
+		return;
+	}
+		
+	setSearch(whereFilter);
+	fetchSearchData(0,PAGESIZE,0);
+}
+
+function fetchSearchData(offset, pagesize, pagenum){
+	if ( projectName.length == 0 || selectFields.length == 0 ) {
+		showMessage("Project is not set.");
+		return;
+	}
+	loadingIndicator.show();
+	var sortBy =  "";
+	if (sortcol != null) {
+		sortBy = ((sortdir > 0) ? "^" : "") + sortcol;
+	}
+
+	var xmlData = {
+		service: "service",
+		action: "search",
+		project: projectName,
+		mergeid: $("#partitionKeysSelect option:selected").text(),
+		select: selectFields,
+		filter: whereFilter,
+		offset: offset,
+		pagesize: pagesize,
+		sort: sortBy
+	};		
+
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(responseData){
+			if(null != responseData) {
+				var searchResultsJsonObj = eval( '(' + responseData + ')');
+								
+				$("#lblSearch").html("Total results found " + searchResultsJsonObj.count + " in " + searchResultsJsonObj.time + " ms");
+				if(searchResultsJsonObj.count == 0){
+					showMessage('No matching records for given query');
+					data = [];
+					dataView.beginUpdate();
+					dataView.setItems(data);
+					dataView.endUpdate();
+					loadingIndicator.hide();	
+					return;
+				}
+				
+				var records = searchResultsJsonObj.records;
+				if( null == searchResultsJsonObj) data.length = 0;
+				else data.length = Math.min(parseInt(searchResultsJsonObj.count),1000000); // limitation of the API 
+				
+				var resultColumnsLower = [];
+				for(var columnI in resultColumns) {
+					resultColumnsLower[columnI] = resultColumns[columnI].toLowerCase();
+				}
+				
+				data = [];
+				var to = (pagenum + 1) * PAGESIZE;
+				var actualRecordsLen = records.length;
+				for(var i = offset,j=0; i < to; i++,j++)
+				{	
+					if(j >= actualRecordsLen)
+						break;
+					var item = [];
+					item['hsearchGridId'] = i;
+					for(var columnI in resultColumns)
+					{
+						item[resultColumns[columnI]] = records[j][resultColumnsLower[columnI]];
+					}
+					data[j] = item;
+				}
+				var totalPages = Math.ceil(searchResultsJsonObj.count /PAGESIZE); 
+				pager.setDefaultOptions({pageSize: PAGESIZE, pageNum: pagenum, totalRows: searchResultsJsonObj.count, totalPages: totalPages});
+				
+				dataView.beginUpdate();
+				dataView.setItems(data,'hsearchGridId');
+				dataView.endUpdate();
+				var dataLen = data.length;
+				for(var k = 0; k < dataLen; k++)
+					grid.updateRow(k);
+				loadingIndicator.hide();
+				
+			} else {
+				loadingIndicator.hide();
+				data.length = 0;
+			}
+		},
+		error: function onError(data)
+		{
+			loadingIndicator.hide();
+			showMessage("Search Error :" + data.responseText);
+			return false;
+		}
+	});  
+}
+
+function initSearch(){
+	//initalize loading indicator
+	if (!loadingIndicator) {
+		loadingIndicator = $("<span class='loading-indicator'><label>Loading...</label></span>").appendTo(document.body);
+		var $g = $("#grdResults");
+
+		loadingIndicator
+			.css("position", "absolute")
+			.css("display", "none")
+			.css("top", $g.offset().top + (($g.height() - loadingIndicator.height()) / 2))
+			.css("left", $g.offset().left + (($g.width() - loadingIndicator.width()) / 2));
+	}
+
+	for(var columnI in resultColumns)
+	{
+		columns.push({id: resultColumns[columnI], name: resultColumns[columnI], field: resultColumns[columnI], width: 150, sortable: true});
+	}  
+	
+	dataView = new Slick.Data.DataView();
+	grid = new Slick.Grid("#grdResults", dataView, columns, options);
+	grid.setSelectionModel(new Slick.RowSelectionModel());
+	pager = new Slick.Controls.Pager(dataView, $("#pager"), {pageSize: 0, pageNum: 0, totalRows: 0, totalPages: 0});
+	
+	grid.onSort.subscribe(function (e, args) {
+        setSort(args.sortCol.field, args.sortAsc ? 1 : -1);
+        var pagingInfo = pager.getDefaultOptions();
+        var offset = pagingInfo.pageNum * pagingInfo.pageSize;
+        fetchSearchData(offset, PAGESIZE, pagingInfo.pageNum);
+        var rows = [];
+        for(var i = 0; i < PAGESIZE; i++){
+        	rows[i] = i;
+        }
+        grid.invalidateRows(rows);
+        grid.updateRowCount();
+        grid.render();
+	});
+
+	// wire up model events to drive the grid
+	dataView.onRowCountChanged.subscribe(function (e, args) {
+	    grid.updateRowCount();
+	    grid.render();
+	});
+
+	dataView.onRowsChanged.subscribe(function (e, args) {
+	    grid.invalidateRows(args.rows);
+	    grid.render();
+	});
+
+	pager.onPaging.subscribe(function (e, pagingInfo) {
+	    var offset = pagingInfo.pageNum * pagingInfo.pageSize;
+	    fetchSearchData(offset, PAGESIZE, pagingInfo.pageNum);
+	});
+	  
+	  // initialize the model after all the events have been hooked up
+	  dataView.beginUpdate();
+	  dataView.setItems(data,'hsearchGridId');
+	  dataView.endUpdate();
+	  dataView.syncGridSelection(grid, false);
+}
+
+function refresh()
+{
+	var xmlData = {
+		service: "service",
+		action: "refresh",
+		project: projectName
+	};
+	$.ajax({
+		type: "POST",
+		async: false,
+		url: "process.xml",
+		data: xmlData,
+		cache:false,
+		dataType: "text",
+		success: function onSuccess(data){
+			showMessage("Successfully refreshed.");
+		},
+		error: function onError(data)
+		{
+			showMessage("Error in refreshing.");
+			return false;
+		}
+	}); 
+	
+}
+
+function saveQuery(){
+	var query = $("#searchText").val();
+	if(query == ""){
+		alert("Please Write a query before saving.");
+		return false;
+	}
+		
+	
+	var queryName = prompt("Please enter the name for your query :","");
+
+	if (queryName == null)
+		return false;
+	
+	var xmlData = {
 			service: "service",
-			action: "refresh",
+			action: "savequery",
+			queryName: queryName,
+			query: query,
 			project: projectName
-		};
+	};
+	
 		$.ajax({
 			type: "POST",
 			async: false,
@@ -678,131 +810,111 @@
 			cache:false,
 			dataType: "text",
 			success: function onSuccess(data){
-				showMessage("Successfully refreshed.");
+				showMessage("Successfully saved your query.");
 			},
 			error: function onError(data)
 			{
-				showMessage("Error in refreshing.");
+				showMessage("Error in saving your query please try later.");
 				return false;
 			}
 		}); 
+}
+
+function getQueries(){
+	
+	var xmlData = {
+			service: "service",
+			action: "getqueries",
+			project: projectName
+	};
+	
+		$.ajax({
+			type: "POST",
+			async: false,
+			url: "process.xml",
+			data: xmlData,
+			cache:false,
+			dataType: "text",
+			success: function onSuccess(data){
+				var htmlSnippet = [];
+				var xml = $.parseXML( data );
+				var $queries = $(xml).find("query");
+				var name ="";
+				var val ="";
+					
+				$queries.each(function() {
+                    name = $(this).find("name").text();
+                    val = $(this).find("value").text();
+                    htmlSnippet.push("<input type='radio' name='savedQuery' value='");
+
+                    htmlSnippet.push(val);
+                    htmlSnippet.push("'>");
+                    htmlSnippet.push(name);
+                    htmlSnippet.push("<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>");
+                    htmlSnippet.push(val);
+                    htmlSnippet.push("</i></input><br/>");
+
+                    $("#queryContent").html(htmlSnippet.join(" "));
+                    $("#queriesDiv").modal();
+				});
+			},
+			error: function onError(data)
+			{
+				showMessage("Error in retrieving saved queries.");
+				return false;
+			}
+		}); 		
+}
+
+function savedQuerySelected(){
+	$("#queriesDiv").modal('hide');
+	var query = $( "input:radio[name=savedQuery]:checked" ).val();
+	$('#searchText').val(query);
+	doSearch();	
+}
+
+function contains(array, elem, casesensitive)
+{
+	if(casesensitive){
+		for(var e in array){
+			if(array[e] === elem) return true;
+		}
 		
 	}
-	
-	function contains(array, elem, casesensitive)
-	{
-		if(casesensitive){
-			for(var e in array){
-				if(array[e] === elem) return true;
-			}
-			
+	else{
+		for(var e in array){
+			if(array[e].toLowerCase() == elem.toLowerCase()) return true;
 		}
-		else{
-			for(var e in array){
-				if(array[e].toLowerCase() == elem.toLowerCase()) return true;
-			}
+	}
+	return false;
+}
+
+function showMessage(msg) {
+	$('#msgArea').html(msg);
+	setTimeout(function(){clearMessage()},3000);
+}
+
+function clearMessage() {
+	$('#msgArea').html("");
+}
+
+function showStatusPopUp(){
+	$("#propertyWindowDiv").modal({
+		minHeight: 550,
+		minWidth: 370,
+		onShow: function (dialog) {
 		}
-		return false;
-	}
-	
-	function showMessage(msg) {
-		$('#msgArea').html(msg);
-		setTimeout(function(){clearMessage()},3000);
-	}
-	
-	function clearMessage() {
-		$('#msgArea').html("");
-	}
-	
-	function showStatusPopUp(){
-		$("#propertyWindowDiv").modal({
-			minHeight: 550,
-			minWidth: 370,
-			onShow: function (dialog) {
-			}
-		});
-	}
+	});
+}
+
+function goToByScroll(id) {
+	var pos = $(id).offset().top - 60;
+	$('html,body').animate({
+		scrollTop : pos
+	}, 1000);
+}
+
+
 </script>
-</head>
-<body>
-
-<table id="searhTable" style="height:100%;width:960px;margin: 0 auto;">
-
-	<tr>
-		<td style="width:30%;text-align:left" align="left">
-			<a href="http://www.hadoopsearch.net" target="_blank"><img height="50px" width="190px" src="images/hsearch-logo.png"></img></a>	
-		</td>
-		<td style="width:70%;text-align:right" align="right">
-			<h1  style="font-size:22pt;">Search</h1>
-		</td>
-	<tr>
-	
-	<tr>
-		<td style="width:960px;vertical-align:top;text-align:left;" >
-			<a href="projects.html" style="font-size:14px;margin-right:10px;" >Home</a>
-		</td>
-		<td style="width:960px;vertical-align:top;text-align:right;" >
-			<span style="font-size:14px;color:#ff0000" id="msgArea" name="msgArea"></span>
-			<a href="#" style="font-size:14px;margin-right:10px;" onclick="refresh();">Refresh</a>
-			<a href="#divHelp" style="font-size:14px;">Help</a>
-		</td>
-	</tr>
-	<tr>
-		<td style="width:960px;vertical-align:top" colspan="2" >
-			<div style="background-color:#fff; padding:16px">
-				<select id="partitionKeysSelect" name="partitionKeysSelect" style="width:250px; height: 30px;" onchange="onPartitionKeyChange();"></select>
-				<input type="text" value="" name="searchText" id="searchText" style="width:530px;height:25px;font-size:12pt;"></input>
-				<input type="button" style="height:32px; font-size:14px; width: 100px;" id="search" name="search" value="Search" onclick="doSearch();"/>
-			</div>
-		</td>
-	</tr>
-	<tr align="top" style="margin:0px;padding:0px">
-		
-		<td style="vertical-align:top; width:256px;">
-			<div class="grid-header" style="width:250px;font-weight:bold">Repeated Fields</div>
-			<select id="tabFldsSelect" name="tabFldsSelect" style="width:252px; height: 25px;" onchange="onTabFldChange();"></select>
-			<div id="grdTabFlds" name="grdTabFlds" style="height:445px; width:248px; border: 2px solid #ffffff;">Tab Feilds</div>
-		</td>
-		
-		<td style="width:692px;vertical-align:top">
-			  <div class="grid-header" style="width:692px">
-				<label id="lblSearch" name="lblSearch">No search word yet. </label>
-			  </div>
-			 
-			<div id="grdResults" style="height:476px;width: 692px;border: 1px solid #ffffff;"></div>
-		</td>
-
-	</tr>
-
-</table>
-
-	<div id="divHelp" style="margin: 0 auto;">
-		<br /><br />
-		<div class="grid-header" style="width:960px; font-weight:bold;text-align:left">Search Help</div>
-		<div style="width:960px;  text-align:left">
-		
-			<h3>Following query types are possible:</h3>
-			<ol>
-				<li>Exact Match = sex:Male</li>
-				<li>Phrase Match = city:"New york"</li>
-				<li>Not Match = sex:!"Male"</li>
-				<li>In Match = days:{"Monday","Sunday"}</li>
-				<li>Range Match = age:[10 : 20]</li>
-			</ol>
-			
-			<div>
-			<h4>A search query:</h4>
-			(sex:"Male" AND days:{"Monday","Sunday"} AND age:!18) OR (sex:"Female" and age:18)
-			<h4>Sorting:</h4>
-			Sort Ascending : ^sex
-			Sort Descending: sex
-			<h4>Facetting:</h4>
-			A comma separated list of fields to perform the facetting.
-			<h4>Pagination</h4>
-			offset = "start from"
-			pagesize = "page size"(-1 is unlimited)
-			</div>
-		</div>
-	</div>
 </body>
 </html>

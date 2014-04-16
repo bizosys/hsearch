@@ -1,6 +1,6 @@
 package com.bizosys.hsearch.console.ui;
 
-import com.bizosys.hsearch.kv.KVIndexer;
+import com.bizosys.hsearch.kv.indexing.KVIndexer;
 
 public class Indexing extends Thread{
 	
@@ -17,7 +17,8 @@ public class Indexing extends Thread{
 		try {
 			indexer.execute(params);
 		} catch (Exception e) {
-			System.err.println(("Could not complete the job."));
+			System.err.println(("Could not complete the job. " + e.getMessage()));
+			e.printStackTrace();
 		}
 	}
 

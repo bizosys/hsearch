@@ -69,6 +69,7 @@
 
     var pagesize = 0;
     var pagenum = 0;
+    var prevPageNum = 0;
     var totalRows = 0;
 
     // events

@@ -57,7 +57,7 @@ public class SearchAdapter  {
 	public ConcurrentHashMap<String, KVRowI> voInstances = new ConcurrentHashMap<String, KVRowI>();
 
 	protected final void setUp(String schemaXmlString) throws Exception {
-		fm = FieldMapping.getInstance();
+		fm = new FieldMapping();
 		fm.parseXMLString(schemaXmlString);
 		TABLE_NAME = fm.tableName;
 	}
@@ -82,11 +82,13 @@ public class SearchAdapter  {
 		searcher.setCheckForAllWords(checkForAllWords);
 
 		IEnricher enricher = null;
-
+		long start = System.currentTimeMillis();
 		searcher.search(mergeId, selectFields, whereFilter, facetFields, sortFields, createVO(fm.voClass), enricher);
+		long end = System.currentTimeMillis();
 
 		SearchResult result = new SearchResult(searcher.getResult(), plugin.facetResult); 
 		result.found = plugin.totalRecords;
+		result.responseTime = end -start;
 		return result;
 	}	
 	
@@ -105,22 +107,28 @@ public class SearchAdapter  {
 	
 	
 	public Map<Object,FacetCount> listTabCounts(String mergeId, String filterQuery, String fieldName) throws Exception {
-
-		Field fld = fm.nameWithField.get(fieldName);
 		
-		boolean process = false;
-		if ( fm.nameWithField.get(fieldName).isMergedKey) process = false;
-		else {
-			if ( fm.nameWithField.get(fieldName).isRepeatable) process = true;
-			if ( fm.nameWithField.get(fieldName).isAnalyzed) process = true;
+		try {
+			Field fld = fm.nameWithField.get(fieldName);
+			
+			boolean process = false;
+			if ( fm.nameWithField.get(fieldName).isMergedKey) process = false;
+			else {
+				if ( fm.nameWithField.get(fieldName).isRepeatable) process = true;
+				if ( fm.nameWithField.get(fieldName).isAnalyzed) process = true;
+			}
+			if ( ! process ) return null;
+			
+			if ( fld.isAnalyzed ) {
+				return listIndexedWords(mergeId, filterQuery, fieldName);
+			} else {
+				return getFacetFields(mergeId,filterQuery,fieldName);
+			}			
+		} catch (Exception e) {
+			System.err.println("SearchAdapter:listTabCounts() : Error in processing schema for field " + fieldName);
+			e.printStackTrace();
 		}
-		if ( ! process ) return null;
-		
-		if ( fld.isAnalyzed ) {
-			return listIndexedWords(mergeId, filterQuery, fieldName);
-		} else {
-			return getFacetFields(mergeId,filterQuery,fieldName);
-		}
+		return null;
 	}	
 	
 	public List<String> listDisplayFields(String mergeId) throws Exception {
@@ -137,14 +145,14 @@ public class SearchAdapter  {
 	}		
 	
 	private Map<Object, FacetCount> getFacetFields(String mergeId, String filterQuery, String fieldName) throws Exception {
-		SearcherPlugin plugin = new SearcherPlugin();
 		Searcher searcher = new Searcher(fm.tableName, fm);
-		searcher.setPlugin(plugin);
-
-		KVRowI aBlankRow = createVO(fm.voClass);
-		IEnricher enricher = null;
-		searcher.search(mergeId, null, filterQuery, fieldName, aBlankRow, enricher);
-		return plugin.facetResult.get(fieldName);
+		BitSetWrapper matchIds = null;
+		if(null != filterQuery){
+			BitSetOrSet matchIdsB = searcher.getIds(mergeId, filterQuery);
+			if(null != matchIdsB)matchIds = matchIdsB.getDocumentSequences(); 
+		}
+		Map<String, Map<Object, FacetCount>> facetResult = searcher.createFacetCount(matchIds, mergeId, fieldName);
+		return facetResult.get(fieldName);
 	}
 	
 	private Map<Object, FacetCount> listIndexedWords(String mergeId, String filterQuery, String fieldName) throws Exception {
@@ -191,6 +199,7 @@ public class SearchAdapter  {
 				String keyName = new String(r.getRow()).substring(prefixT);
 
 				for (KeyValue kv : r.list()) {
+					
 					byte[] bits = kv.getValue();
 					if ( null == bits) continue;
 					int bitsT = bits.length;
@@ -217,6 +226,7 @@ public class SearchAdapter  {
 	public class SearchResult {
 		
 		public int found = 0;
+		public long responseTime = 0;
 		public Set<KVRowI> records = null;
 		public Map<String, Map<Object, FacetCount>> facets = null;
 

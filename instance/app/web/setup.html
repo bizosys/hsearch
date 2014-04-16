@@ -28,26 +28,11 @@
   <link rel="shortcut icon" href="images/favicon.gif">
   <link rel="stylesheet" href="css/slick.grid.css" type="text/css"/>
   <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
-  <link rel="stylesheet" href="controls/slick.columnpicker.css" type="text/css"/>
-  <link rel="stylesheet" href="css/hsearch.css" type="text/css"/>
-  <link rel="stylesheet" href="css/slick-default-theme.css" type="text/css"/>
-  
-  <style>
-    .slick-cell-checkboxsel {
-      background: #f0f0f0;
-      border-right-color: silver;
-      border-right-style: solid;
-    }
-	
-    .cell-title {
-      font-weight: bold;
-    }
+  <link rel="stylesheet" href="controls/slick.columnpicker.css" type="text/css">
 
-    .cell-effort-driven {
-      text-align: center;
-    }
-  </style>
-  
+  <link href="css/bootstrap.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="css/hsearch.css" type="text/css"/>
+    
 <script src="js/lib/firebugx.js"></script>
 
 <script src="js/lib/jquery-1.7.min.js"></script>
@@ -67,65 +52,29 @@
 <script src="js/slick.editors.js"></script>
 <script src="js/slick.grid.js"></script>
 
+<style type="text/css">
+	.mrv2{
+		display:none;
+	}
+</style>
 <script type="text/javascript">
+	
+	$(document).ready(function(){
+		$(".mrv2").css("display","none");
+	});
+	
+	function showMR(isMR1){
+		if(isMR1){
+			$(".mrv1").show();
+			$(".mrv2").hide();			
+		} else {
+			$(".mrv1").hide();
+			$(".mrv2").show();						
+		}
+	}
 
 	var stepsGrid;
 
-	$(function () {
-		loadSteps() ;
-	});
-	
-	/** ********************************************** */
-	
-	function loadSteps() {
-		var data = [];
-		var options = {
-			editable: false,
-			enableCellNavigation: true,
-			asyncEditorLoading: false,
-			autoEdit: false
-		};
-		var i = 0;
-		var d = (data[i++] = {});
-		d[0] = "hsearch-core.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
-		d = (data[i++] = {});
-		d[0] = "hsearch-idsearch.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
-		d = (data[i++] = {});
-		d[0] = "hsearch-federated.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
-		d = (data[i++] = {});
-		d[0] = "lucene-queryparser-3.6.2.jar is in hadoop/lib and hbase/lib folder of all masters and slaves.";
-		d = (data[i++] = {});
-		d[0] = "lucene-analyzers-3.6.2.jar  is in hadoop/lib and hbase/lib folder of all masters and slaves.";
-		d = (data[i++] = {});
-		d[0] = "lucene-core-3.6.2.jar  is in hadoop/lib and hbase/lib folder of all masters and slaves.";
-		d = (data[i++] = {});
-		d[0] = "Hadoop and HBase are  RESTARTED.";		
-
-		var checkboxSelector = new Slick.CheckboxSelectColumn({
-		  cssClass: "slick-cell-checkboxsel"
-		});
-
-		var columns = [];
-		columns.push(checkboxSelector.getColumnDefinition());
-
-		columns.push({
-			id: 0,
-			name: "SETUP STEPS *(Below libraries can be found under hsearch-console/WEB-INF/lib folder)",
-			field: 0,
-			width: 800,
-			editor: Slick.Editors.Text
-			
-		});
-
-		stepsGrid = new Slick.Grid("#grdDoneSteps", data, columns, options);
-		stepsGrid.setSelectionModel(new Slick.RowSelectionModel({selectActiveRow: false}));
-		stepsGrid.registerPlugin(checkboxSelector);	
-	}	
-	
-	
-
-	
-	
     /** ********************************************** */
 	
 	function requiredFieldValidator(value) {
@@ -139,28 +88,33 @@
 	/** ********************************************** */
 	
 	function applyConfiguration() {
-		var selectedIndexes = stepsGrid.getSelectedRows();
-		var remainingSteps = stepsGrid.getData().length - selectedIndexes.length ;
-		if ( remainingSteps != 0 ) {
-			alert("Please finish all steps. You have " + remainingSteps + " steps more to complete.");
-			return;
-		}
-		
 		var hbaseRootdir = $('#txtHbaseRoot').val();
 		var hbaseZooKeeper = $('#txtZooKeeper').val();
 		var fsDefaultName = $('#txtFsDefaultName').val();
-		var jobTrackerAddr = $('#txtJobTrackerAddr').val();
-		var jobHttpAddr = $('#txtJobHttpAddr').val();
-
+		var jobTrackerAddr = '';
+		var jobHttpAddr = '';
+		var jobHostName = '';
+		var mrVersion = $('input[name="mrv"]:checked').val();
+		
+		if(mrVersion === "mrv1"){
+			jobTrackerAddr = $('#txtJobTrackerAddr').val();
+			jobHttpAddr = $('#txtJobHttpAddr').val();
+		} else {
+			jobTrackerAddr = $('#txtYarnTrackerAddr').val();
+			jobHttpAddr = $('#txtYarnHttpAddr').val();
+			jobHostName = $('#txtYarnHostName').val();
+		}
 		var xmlData = {
 			action: "hadoopsetup",
 			hbaserootdir : hbaseRootdir,
 			hbasezookeeper : hbaseZooKeeper,
 			fsdefaultname : fsDefaultName,
+			mrVersion : mrVersion,
 			jobTrackerAddr : jobTrackerAddr,
-			jobHttpAddr : jobHttpAddr
-		}
-		$.ajax({
+			jobHttpAddr : jobHttpAddr,
+			jobHostName : jobHostName
+		};
+ 		$.ajax({
 			type: "POST",
 			async: false,
 			url: "setup.xml",
@@ -174,114 +128,88 @@
 				alert(data);
 			}
 		});  
-		
-		
 	}	
 	
 	
 </script>
 </head>
 <body>
-
-<table style="height:100%; margin: 0 auto; border: none;">
-
-	<tr>
-		<td style="width:42%;">
-			<a href="http://www.hadoopsearch.net" target="_blank"><img height="50px" width="190px" src="images/hsearch-logo.png"></img></a>	
-		</td>
-		<td style="width:58%;text-align:right">
-			<h1  style="font-size:22pt;">Configuration</h1>
-		</td>
-	<tr>
-	
-	<tr>
-		<td colspan="2" style="width:100%;height:5%;" >
-			<div class="grid-header" style="font-weight:bold;">CONFIGURATION PROPERTIES</div>
-
-			<table style="width:100%;">
-				<tr style="height:24px;">
-					<td class="slick-header-column" style="width:30%;text-align:center"><span class="slick-column-name">PROPERTY-NAME</span></td>
-					<td class="slick-header-column" style="width:70%;text-align:center"> <span class="slick-column-name">PROPERTY-VALUE</span></td>
-				</tr>
+<div id="wrapper">
+		<div class="navbar navbar-default navbar-fixed-top" data-role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse"
+						data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span> <span
+							class="icon-bar"></span> <span class="icon-bar"></span> <span
+							class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand logo-nav" href="http://www.hadoopsearch.net" target="_blank">
+						<img height="50px" width="190px" src="images/hsearch-logo.png" />
+					</a>
+				</div>
+				<div class="collapse navbar-collapse collapse">
+					<ul class="nav navbar-nav navbar-right">
+					</ul>
+				</div>
+				<!-- /.navbar-collapse -->
+			</div>
+			<!-- /.container -->
+		</div>
 				
-				<tr class="ui-widget-content" style="width:100%; height:24px">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						hbase.rootdir
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" type="text" id="txtHbaseRoot"  name="txtHbaseRoot" value="hdfs://localhost:8020/hbase"/>
-					</td>
-				</tr>
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-12">
+					<div class="tableContainer">
+						<div class="tableHeader">Configuration Properties</div>			
+						<div class="tableContent">
+							<table class='txtland-table'>
+								<thead>
+									<tr><th style="width: 30%;">Poperty Name</th>
+										<th style="width: 70%">Property Value</th>
+									</tr></thead>
+								<tbody>
+									<tr><td style="text-align: right; font-weight: bold;">hbase.rootdir : </td>
+										<td><input type="text" id="txtHbaseRoot"  name="txtHbaseRoot" class="form-control input-md" value="hdfs://localhost:8020/hbase" spellcheck="false"/></td>
+									</tr>
+									<tr><td style="text-align: right; font-weight: bold;">hbase.zookeeper.quorum : </td>
+										<td><input id="txtZooKeeper" name="txtZooKeeper" type="text" class="form-control input-md" value="localhost" spellcheck="false"/></td>
+									</tr>
+									<tr><td style="text-align: right; font-weight: bold;">fs.default.name : </td>
+										<td><input type="text" id="txtFsDefaultName"  name="txtFsDefaultName" class="form-control input-md" value="hdfs://localhost:8020" spellcheck="false"/></td>
+									</tr>
+									<tr><td style="text-align: right; font-weight: bold;">Mapreduce Version : </td>
+										<td>
+											<label><input type="radio" id="mrv" name="mrv" onclick="showMR(true);" value="mrv1" checked="checked"/> MapReduce-v1</label>
+											<label style="margin-left: 30px;"><input type="radio" id="mrv" name="mrv" onclick="showMR(false);" value="mrv2"/> MapReduce-v2 (Uses Yarn)</label>
+										</td>
+									</tr>
+									<tr class="mrv1"><td style="text-align: right; font-weight: bold;">mapred.job.tracker : </td>
+										<td><input type="text" id="txtJobTrackerAddr"  name="txtJobTrackerAddr" class="form-control input-md" value="hdfs://localhost:8021" spellcheck="false"/></td>
+									</tr>
+									<tr class="mrv1"><td style="text-align: right; font-weight: bold;">mapreduce.jobtracker.http.address : </td>
+										<td><input type="text" id="txtJobHttpAddr"  name="txtJobHttpAddr" class="form-control input-md" value="localhost:50030" spellcheck="false"/></td>
+									</tr>
+									<tr class="mrv2"><td style="text-align: right; font-weight: bold;">yarn.resourcemanager.hostname : </td>
+										<td><input type="text" id="txtYarnHostName"  name="txtYarnHostName" class="form-control input-md" value="localhost" spellcheck="false"/></td>
+									</tr>
+									<tr class="mrv2"><td style="text-align: right; font-weight: bold;">yarn.resourcemanager.address : </td>
+										<td><input type="text" id="txtYarnTrackerAddr"  name="txtYarnTrackerAddr" class="form-control input-md" value="hdfs://localhost:8032" spellcheck="false"/></td>
+									</tr>
+									<tr class="mrv2"><td style="text-align: right; font-weight: bold;">yarn.resourcemanager.webapp.address : </td>
+										<td><input type="text" id="txtYarnHttpAddr"  name="txtYarnHttpAddr" class="form-control input-md" value="localhost:8088" spellcheck="false"/></td>
+									</tr>									
+								</tbody>
+							</table>
+							<div style="text-align: center;margin: 6px;">
+								<input type="button" value="Apply Configuration" class="txtBtn greenBg" onclick="applyConfiguration();"/>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+</div>
 
-				<tr class="ui-widget-content" style="width:100%; height:24px;">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						hbase.zookeeper.quorum
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" id="txtZooKeeper" name="txtZooKeeper" type="text" value="localhost" />
-					</td>
-				</tr>
-				
-				<tr class="ui-widget-content" style="width:100%; height:24px">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						fs.default.name
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" type="text" id="txtFsDefaultName"  name="txtFsDefaultName" value="hdfs://localhost:8020"/>
-					</td>
-				</tr>
-
-				<tr class="ui-widget-content" style="width:100%; height:24px">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						mapred.job.tracker
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" type="text" id="txtJobTrackerAddr"  name="txtJobTrackerAddr" value=""/>
-					</td>
-				</tr>
-
-				<tr class="ui-widget-content" style="width:100%; height:24px">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						mapreduce.jobtracker.http.address
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" type="text" id="txtJobHttpAddr"  name="txtJobHttpAddr" value=""/>
-					</td>
-				</tr>
-				
-				<!--
-				<tr class="ui-widget-content" style="width:100%; height:24px;">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						Stopwords
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" id="txtStopwords" name="txtStopwords" type="textbox"  value="a,am,the,are"/>
-					</td>
-				</tr>
-				
-				<tr class="ui-widget-content" style="width:100%; height:24px;">
-					<td style="width:30%;height:24px;font-weight:bold;background-color:#ffffdf;border:1px solid transparent;text-align:left">
-						Synonums
-					</td>
-					<td style="width:70%; height:24px;text-align:center">
-						<input style="width:90%;" id="txtSynonyms" name="txtSynonyms" type="textbox"  value="bangalore"/>
-					</td>
-				</tr>
-				-->
-			</table>
-			
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2" style="width:100%;height:30%;text-align: left;">
-			<div id="grdDoneSteps" name="grdDoneSteps" style="height:232px; width:830px;margin-top:32px;">Settings</div>
-		</td>
-	<tr>
-	<tr>
-		<td colspan="2" style="width:100%;height:5%;text-align:center">
-			<input type="button" style="height:40px; font-size:14px" value="Apply Configuration" onclick="applyConfiguration();"/>
-		</td>
-	<tr>
-</table>
 </body>
 </html>

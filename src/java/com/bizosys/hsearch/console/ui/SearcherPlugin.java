@@ -20,6 +20,7 @@
 
 package com.bizosys.hsearch.console.ui;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,8 +79,9 @@ public class SearcherPlugin implements ISearcherPlugin {
 	}
 
 	@Override
-	public void beforeSort(String arg0, Set<KVRowI> arg1) {
-		
+	public boolean beforeSort(String arg0, String arg1, Set<KVRowI> arg2,
+			Map<Integer, BitSetWrapper> arg3) throws IOException {
+		return false;
 	}
 
 }
